@@ -21,7 +21,7 @@ class StartMap:
 
         # 2. [신규] 적 뼈대
         # (스컬(target)과 발판 목록(platforms)을 뼈대로 넘겨줌)
-        self.knight = EnemyKnight(800, 210, self.skull, self.platforms)  # 800, 135 위치에 스폰
+        self.knight = EnemyKnight(1500, 210, self.skull, self.platforms)  # 800, 135 위치에 스폰
 
     def enter(self):
         game_world.clear()
