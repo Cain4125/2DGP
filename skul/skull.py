@@ -1,0 +1,579 @@
+from pico2d import load_image, get_time
+from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
+
+import game_world
+import game_framework
+from state_machine import StateMachine
+from ball import Ball
+from constants import *
+
+
+def space_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
+
+
+def a_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
+
+
+def right_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
+
+
+def right_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
+
+
+def left_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_LEFT
+
+
+def left_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_LEFT
+
+
+def z_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_z
+
+
+def x_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_x
+
+
+def collide(a, b):
+    left_a, bottom_a, right_a, top_a = a.get_bb()
+    left_b, bottom_b, right_b, top_b = b.get_bb()
+    if left_a > right_b: return False
+    if right_a < left_b: return False
+    if top_a < bottom_b: return False
+    if bottom_a > top_b: return False
+    return True
+
+
+GROUND_Y = 135
+SCALE = 3
+RUN_SPEED_PPS = 5 * 60.0
+GRAVITY_PPS = 1.1 * (60.0 ** 2)
+JUMP_VY_PPS = 16.0 * 60.0
+DASH_SPEED_PPS = RUN_SPEED_PPS * 3.0
+DASH_DURATION_SEC = 0.25
+DASH_COOLDOWN_SEC = 0.7
+ATTACK_MOVE_PPS = RUN_SPEED_PPS / 4.0
+ATTACK_FPS = 12.0
+IDLE_FPS = 8.0
+RUN_FPS = 12.0
+JUMP_FPS = 6.0
+JUMP_ATTACK_FPS = 15.0
+
+
+class Idle:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if Idle.image is None:
+            Idle.image = load_image('skul_idle.png')
+
+    def enter(self, e):
+        self.skull.dir = 0
+        self.skull.f_frame = 0.0
+
+    def exit(self, e):
+        if a_down(e): self.skull.fire_ball()
+
+    def do(self):
+        self.skull.recompute_dir()
+        if self.skull.dir != 0:
+            self.skull.state_machine.cur_state.exit(('AUTO_RUN', None))
+            self.skull.state_machine.cur_state = self.skull.RUN
+            self.skull.RUN.enter(('AUTO_RUN', None))
+            return
+        self.skull.f_frame = (self.skull.f_frame + IDLE_FPS * game_framework.frame_time) % 4
+        self.skull.frame = int(self.skull.f_frame)
+
+    def draw(self, camera_x, camera_y):
+        src_w, src_h = 50, 50
+        screen_x = self.skull.x - camera_x
+        screen_y = self.skull.y - camera_y
+        if self.skull.face_dir == 1:
+            Idle.image.clip_draw(self.skull.frame * src_w, 0, src_w, src_h, screen_x, screen_y, src_w * SCALE,
+                                 src_h * SCALE)
+        else:
+            Idle.image.clip_composite_draw(self.skull.frame * src_w, 0, src_w, src_h, 0, 'h', screen_x, screen_y,
+                                           src_w * SCALE, src_h * SCALE)
+
+    def handle_event(self, e):
+        return False
+
+
+class Run:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if Run.image is None:
+            Run.image = load_image('skul_run.png')
+
+    def enter(self, e):
+        self.skull.recompute_dir()
+        if self.skull.dir == 0:
+            if right_down(e):
+                self.skull.dir = 1
+            elif left_down(e):
+                self.skull.dir = -1
+            else:
+                self.skull.dir = self.skull.face_dir
+        if self.skull.dir != 0: self.skull.face_dir = self.skull.dir
+        self.skull.f_frame = 0.0
+
+    def exit(self, e):
+        if a_down(e): self.skull.fire_ball()
+
+    def do(self):
+        self.skull.f_frame = (self.skull.f_frame + RUN_FPS * game_framework.frame_time) % 8
+        self.skull.frame = int(self.skull.f_frame)
+        self.skull.recompute_dir()
+        self.skull.x += self.skull.dir * RUN_SPEED_PPS * game_framework.frame_time
+        if self.skull.dir != 0: self.skull.face_dir = self.skull.dir
+        if not (self.skull.left_pressed or self.skull.right_pressed):
+            self.skull.state_machine.cur_state.exit(('STOP', None))
+            self.skull.state_machine.cur_state = self.skull.IDLE
+            self.skull.IDLE.enter(('STOP', None))
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.skull.x - camera_x
+        screen_y = self.skull.y - camera_y
+        if self.skull.face_dir == 1:
+            Run.image.clip_draw(self.skull.frame * 50, 0, 50, 50, screen_x, screen_y, 50 * SCALE, 50 * SCALE)
+        else:
+            Run.image.clip_composite_draw(self.skull.frame * 50, 0, 50, 50, 0, 'h', screen_x, screen_y, 50 * SCALE, 50 * SCALE)
+
+    def handle_event(self, e):
+        return False
+
+
+class Jump:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if Jump.image is None:
+            Jump.image = load_image('skul_jump.png')
+        self.cell_w = Jump.image.w // 4
+        self.cell_h = Jump.image.h
+        self.timer = 0.0
+        self.frame_idx = 0
+
+    def enter(self, e):
+        if space_down(e):
+            if self.skull.jump_count < 2:
+                self.skull.vy = JUMP_VY_PPS
+                self.skull.jump_count += 1
+        elif e[0] == 'FALL':
+            self.skull.jump_count = 1
+        self.timer = 0.0
+
+    def exit(self, e):
+        if a_down(e): self.skull.fire_ball()
+
+    def do(self):
+        self.skull.recompute_dir()
+        if self.skull.dir != 0: self.skull.face_dir = self.skull.dir
+        self.skull.x += self.skull.dir * RUN_SPEED_PPS * game_framework.frame_time
+        self.timer += game_framework.frame_time
+        anim_frame = int(self.timer * JUMP_FPS) % 2
+        self.frame_idx = (0 + anim_frame) if self.skull.vy > 0 else (2 + anim_frame)
+
+    def draw(self, camera_x, camera_y):
+        sx = self.cell_w * self.frame_idx
+        sy = 0
+        sw = self.cell_w
+        sh = self.cell_h
+        screen_x = self.skull.x - camera_x
+        screen_y = self.skull.y - camera_y
+        if self.skull.face_dir == 1:
+            Jump.image.clip_draw(sx, sy, sw, sh, screen_x, screen_y, sw * SCALE, sh * SCALE)
+        else:
+            Jump.image.clip_composite_draw(sx, sy, sw, sh, 0, 'h', screen_x, screen_y, sw * SCALE, sh * SCALE)
+
+    def handle_event(self, e):
+        return False
+
+
+class Dash:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if Dash.image is None:
+            Dash.image = load_image('skul_dash.png')
+        self.cell_w = Dash.image.w
+        self.cell_h = Dash.image.h
+        self.timer = 0.0
+        self.was_airborne = False
+
+    def enter(self, e):
+        self.skull.dir = self.skull.face_dir
+        self.timer = 0.0
+        self.was_airborne = not self.skull.on_ground
+        self.skull.vy = 0
+        self.skull.last_dash_time = get_time()
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.skull.x += self.skull.dir * DASH_SPEED_PPS * game_framework.frame_time
+        self.timer += game_framework.frame_time
+        if self.timer >= DASH_DURATION_SEC:
+            self.skull.state_machine.cur_state.exit(('DASH_END', None))
+            if self.was_airborne:
+                next_state = self.skull.JUMP
+            else:
+                self.skull.recompute_dir()
+                next_state = self.skull.RUN if self.skull.dir != 0 else self.skull.IDLE
+            self.skull.state_machine.cur_state = next_state
+            next_state.enter(('DASH_END', None))
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.skull.x - camera_x
+        screen_y = self.skull.y - camera_y
+        if self.skull.face_dir == 1:
+            Dash.image.clip_draw(0, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+        else:
+            Dash.image.clip_composite_draw(0, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+
+    def handle_event(self, e):
+        return False
+
+
+class Attack1:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if Attack1.image is None:
+            Attack1.image = load_image('skul_attack.png')
+        self.cell_w = 100
+        self.cell_h = 100
+        self.buffered_x = False
+        self.attack_move_dir = 0
+
+    def enter(self, e):
+        self.skull.f_frame = 0.0
+        self.skull.frame = 0
+        self.buffered_x = False
+        self.attack_move_dir = self.skull.face_dir
+        if not self.skull.on_ground:
+            self.skull.vy = 0
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.skull.recompute_dir()
+        if self.skull.dir != 0 and self.skull.dir != self.attack_move_dir:
+            self.attack_move_dir = self.skull.dir
+        self.skull.x += self.attack_move_dir * ATTACK_MOVE_PPS * game_framework.frame_time
+        self.skull.f_frame += ATTACK_FPS * game_framework.frame_time
+        self.skull.frame = int(self.skull.f_frame)
+
+        if self.skull.f_frame >= 5.0:
+            self.skull.state_machine.cur_state.exit(('ATTACK1_END', None))
+            if self.buffered_x:
+                next_state = self.skull.ATTACK2
+            elif not self.skull.on_ground:
+                next_state = self.skull.JUMP
+            else:
+                self.skull.recompute_dir()
+                next_state = self.skull.RUN if self.skull.dir != 0 else self.skull.IDLE
+            self.skull.state_machine.cur_state = next_state
+            next_state.enter(('ATTACK1_END', None))
+
+    def draw(self, camera_x, camera_y):
+        draw_y = self.skull.y + (25 * SCALE)
+        frame_to_draw = min(self.skull.frame, 4)
+        sx = self.cell_w * frame_to_draw
+        screen_x = self.skull.x - camera_x
+        screen_y = draw_y - camera_y
+        if self.skull.face_dir == 1:
+            Attack1.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+        else:
+            Attack1.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+
+    def handle_event(self, e):
+        if x_down(e):
+            self.buffered_x = True
+            return True
+        return False
+
+
+class Attack2:
+    def __init__(self, skull):
+        self.skull = skull
+        self.image = Attack1.image
+        self.cell_w = 100
+        self.cell_h = 100
+        self.buffered_x = False
+        self.attack_move_dir = 0
+
+    def enter(self, e):
+        self.skull.f_frame = 5.0
+        self.skull.frame = 5
+        self.buffered_x = False
+        self.attack_move_dir = self.skull.face_dir
+        if not self.skull.on_ground:
+            self.skull.vy = 0
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.skull.recompute_dir()
+        if self.skull.dir != 0 and self.skull.dir != self.attack_move_dir:
+            self.attack_move_dir = self.skull.dir
+        self.skull.x += self.attack_move_dir * ATTACK_MOVE_PPS * game_framework.frame_time
+        self.skull.f_frame += ATTACK_FPS * game_framework.frame_time
+        self.skull.frame = int(self.skull.f_frame)
+
+        if self.skull.f_frame >= 9.0:
+            self.skull.state_machine.cur_state.exit(('ATTACK2_END', None))
+            if self.buffered_x:
+                next_state = self.skull.ATTACK1
+            elif not self.skull.on_ground:
+                next_state = self.skull.JUMP
+            else:
+                self.skull.recompute_dir()
+                next_state = self.skull.RUN if self.skull.dir != 0 else self.skull.IDLE
+            self.skull.state_machine.cur_state = next_state
+            next_state.enter(('ATTACK2_END', None))
+
+    def draw(self, camera_x, camera_y):
+        draw_y = self.skull.y + (25 * SCALE)
+        frame_to_draw = min(self.skull.frame, 8)
+        sx = self.cell_w * frame_to_draw
+        screen_x = self.skull.x - camera_x
+        screen_y = draw_y - camera_y
+        if self.skull.face_dir == 1:
+            self.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+        else:
+            self.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+
+    def handle_event(self, e):
+        if x_down(e):
+            self.buffered_x = True
+            return True
+        return False
+
+
+class JumpAttack:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if JumpAttack.image is None:
+            JumpAttack.image = load_image('skul_jump_attack.png')
+        self.cell_w = 100
+        self.cell_h = 100
+        self.played_once = False
+
+    def enter(self, e):
+        self.skull.f_frame = 0.0
+        self.skull.frame = 0
+        self.played_once = False
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.skull.recompute_dir()
+        if self.skull.dir != 0:
+            self.skull.face_dir = self.skull.dir
+        self.skull.x += self.skull.dir * RUN_SPEED_PPS * game_framework.frame_time
+
+        if not self.played_once:
+            self.skull.f_frame += JUMP_ATTACK_FPS * game_framework.frame_time
+            if self.skull.f_frame >= 4.0:
+                self.played_once = True
+                self.skull.frame = 3
+            else:
+                self.skull.frame = int(self.skull.f_frame)
+        else:
+            self.skull.frame = 3
+
+        if self.played_once and self.skull.on_ground:
+            self.skull.state_machine.cur_state.exit(('LAND_ATTACK_END', None))
+            self.skull.recompute_dir()
+            next_state = self.skull.RUN if (self.skull.left_pressed or self.skull.right_pressed) else self.skull.IDLE
+            self.skull.state_machine.cur_state = next_state
+            next_state.enter(('LAND_ATTACK_END', None))
+
+    def draw(self, camera_x, camera_y):
+        draw_y = self.skull.y + (25 * SCALE)
+        frame_to_draw = self.skull.frame
+        sx = self.cell_w * frame_to_draw
+        screen_x = self.skull.x - camera_x
+        screen_y = draw_y - camera_y
+        if self.skull.face_dir == 1:
+            JumpAttack.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+        else:
+            JumpAttack.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+
+    def handle_event(self, e):
+        return False
+
+
+class Skull:
+    def __init__(self, platforms, world_w=1400):
+        self.x, self.y = 400, GROUND_Y
+        self.f_frame = 0.0
+        self.frame = 0
+        self.face_dir = 1
+        self.dir = 0
+        self.vy = 0.0
+        self.left_pressed = False
+        self.right_pressed = False
+        self.last_dash_time = 0.0
+        self.platforms = platforms
+        self.on_ground = True
+        self.half_w = (50 * SCALE) / 2
+        self.half_h = (50 * SCALE) / 2
+
+        self.world_w = world_w
+        self.jump_count = 0
+
+        self.IDLE = Idle(self)
+        self.RUN = Run(self)
+        self.JUMP = Jump(self)
+        self.DASH = Dash(self)
+        self.ATTACK1 = Attack1(self)
+        self.ATTACK2 = Attack2(self)
+        self.JUMP_ATTACK = JumpAttack(self)
+
+        def z_down_with_cooldown(e):
+            is_z = z_down(e)
+            cooldown_ready = (get_time() - self.last_dash_time > DASH_COOLDOWN_SEC)
+            return is_z and cooldown_ready
+
+        self.state_machine = StateMachine(
+            self.IDLE,
+            {
+                self.IDLE: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1, right_down: self.RUN, left_down: self.RUN, right_up: self.IDLE, left_up: self.IDLE, a_down: self.IDLE},
+                self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1, right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN, a_down: self.RUN},
+                self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK},
+                self.DASH: {},
+                self.ATTACK1: {},
+                self.ATTACK2: {},
+                self.JUMP_ATTACK: {space_down: self.JUMP, z_down_with_cooldown: self.DASH}
+            }
+        )
+
+    def get_bb_feet(self):
+        return self.x - self.half_w, self.y - self.half_h, self.x + self.half_w, self.y - self.half_h + 5
+
+    def check_ground(self):
+        self.on_ground = False
+
+        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
+            self.half_w = (100 * SCALE) / 2
+            self.half_h = (100 * SCALE) / 2
+        elif self.state_machine.cur_state == self.JUMP:
+            self.half_w = (45 * SCALE) / 2
+            self.half_h = (50 * SCALE) / 2
+        else:
+            self.half_w = (50 * SCALE) / 2
+            self.half_h = (50 * SCALE) / 2
+
+        my_feet = self.get_bb_feet()
+        if not self.platforms:
+            return
+
+        for p in self.platforms:
+            platform_bb = p.get_bb()
+            left_a, bottom_a, right_a, top_a = my_feet
+            left_b, bottom_b, right_b, top_b = platform_bb
+            if left_a > right_b: continue
+            if right_a < left_b: continue
+            if top_a < bottom_b: continue
+            if bottom_a > top_b: continue
+
+            if self.vy <= 0:
+                self.on_ground = True
+                self.vy = 0
+                self.y = platform_bb[3] + self.half_h
+                return
+
+    def update(self):
+        cur = self.state_machine.cur_state
+        if cur not in (self.DASH, self.ATTACK1, self.ATTACK2):
+            self.vy -= GRAVITY_PPS * game_framework.frame_time
+        self.y += self.vy * game_framework.frame_time
+        if cur != self.DASH:
+            self.check_ground()
+        else:
+            self.on_ground = False
+        self.state_machine.update()
+        cur_after_do = self.state_machine.cur_state
+        if self.on_ground:
+            if cur_after_do in (self.JUMP,):
+                cur_after_do.exit(('LAND', None))
+                self.recompute_dir()
+                next_state = self.RUN if (self.left_pressed or self.right_pressed) else self.IDLE
+                self.state_machine.cur_state = next_state
+                next_state.enter(('LAND', None))
+                self.jump_count = 0
+            elif cur_after_do in (self.IDLE, self.RUN) and cur == self.JUMP_ATTACK:
+                self.jump_count = 0
+        else:
+            if cur_after_do in (self.IDLE, self.RUN):
+                cur_after_do.exit(('FALL', None))
+                self.state_machine.cur_state = self.JUMP
+                self.JUMP.enter(('FALL', None))
+
+    def handle_event(self, event):
+        if event.type == SDL_KEYDOWN:
+            if event.key == SDLK_RIGHT:
+                self.right_pressed = True
+            elif event.key == SDLK_LEFT:
+                self.left_pressed = True
+        elif event.type == SDL_KEYUP:
+            if event.key == SDLK_RIGHT:
+                self.right_pressed = False
+            elif event.key == SDLK_LEFT:
+                self.left_pressed = False
+
+        event_tuple = ('INPUT', event)
+        handled_by_state = False
+
+        if hasattr(self.state_machine.cur_state, 'handle_event'):
+            handled_by_state = self.state_machine.cur_state.handle_event(event_tuple)
+
+        if not handled_by_state:
+            self.state_machine.handle_state_event(event_tuple)
+
+    def draw(self, camera_x, camera_y):
+        self.state_machine.draw(camera_x, camera_y)
+
+    def fire_ball(self):
+        ball = Ball(self.x, self.y, self.face_dir * 10, self.world_w)
+        game_world.add_object(ball)
+
+    def recompute_dir(self):
+        r = 1 if self.right_pressed else 0
+        l = 1 if self.left_pressed else 0
+        self.dir = r - l
+        if self.dir != 0:
+            self.face_dir = 1 if self.dir > 0 else -1
+
+    def get_bb(self):
+        current_w, current_H = 50, 50
+        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
+            current_w, current_H = 100, 100
+        elif self.state_machine.cur_state == self.JUMP:
+            current_w, current_H = 45, 50
+
+        half_w = (current_w * SCALE) / 2
+        half_h = (current_H * SCALE) / 2
+
+        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+
