@@ -6,7 +6,7 @@ import game_framework
 from state_machine import StateMachine
 from ball import Ball
 from constants import *
-
+from enemy_knight import EnemyKnight
 
 def space_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
