@@ -40,9 +40,9 @@ def x_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_x
 
 
-def collide(a, b):
-    left_a, bottom_a, right_a, top_a = a.get_bb()
-    left_b, bottom_b, right_b, top_b = b.get_bb()
+def collide(bb_a, bb_b):
+    left_a, bottom_a, right_a, top_a = bb_a
+    left_b, bottom_b, right_b, top_b = bb_b
     if left_a > right_b: return False
     if right_a < left_b: return False
     if top_a < bottom_b: return False
