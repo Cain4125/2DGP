@@ -258,6 +258,7 @@ class Attack1:
         self.cell_h = 100
         self.buffered_x = False
         self.attack_move_dir = 0
+        self.hit_enemies = []
 
     def enter(self, e):
         self.skull.f_frame = 0.0
@@ -266,11 +267,14 @@ class Attack1:
         self.attack_move_dir = self.skull.face_dir
         if not self.skull.on_ground:
             self.skull.vy = 0
+        self.hit_enemies.clear()
 
     def exit(self, e):
         pass
 
     def do(self):
+        if 2 <= self.skull.frame <= 4:
+            self.skull.check_attack_collision(self.hit_enemies)
         self.skull.recompute_dir()
         if self.skull.dir != 0 and self.skull.dir != self.attack_move_dir:
             self.attack_move_dir = self.skull.dir
@@ -316,6 +320,7 @@ class Attack2:
         self.cell_h = 100
         self.buffered_x = False
         self.attack_move_dir = 0
+        self.hit_enemies = []
 
     def enter(self, e):
         self.skull.f_frame = 5.0
@@ -324,11 +329,14 @@ class Attack2:
         self.attack_move_dir = self.skull.face_dir
         if not self.skull.on_ground:
             self.skull.vy = 0
+        self.hit_enemies.clear()
 
     def exit(self, e):
         pass
 
     def do(self):
+        if 6 <= self.skull.frame <= 8:
+            self.skull.check_attack_collision(self.hit_enemies)
         self.skull.recompute_dir()
         if self.skull.dir != 0 and self.skull.dir != self.attack_move_dir:
             self.attack_move_dir = self.skull.dir
@@ -376,16 +384,20 @@ class JumpAttack:
         self.cell_w = 100
         self.cell_h = 100
         self.played_once = False
+        self.hit_enemies = []
 
     def enter(self, e):
         self.skull.f_frame = 0.0
         self.skull.frame = 0
         self.played_once = False
+        self.hit_enemies.clear()
 
     def exit(self, e):
         pass
 
     def do(self):
+        if 1 <= self.skull.frame <= 3:
+            self.skull.check_attack_collision(self.hit_enemies)
         self.skull.recompute_dir()
         if self.skull.dir != 0:
             self.skull.face_dir = self.skull.dir
@@ -502,6 +514,31 @@ class Skull:
                 self.vy = 0
                 self.y = platform_bb[3] + self.half_h
                 return
+
+    def get_attack_bb(self):
+        attack_half_w = (100 * SCALE) / 2
+        attack_half_h = (100 * SCALE) / 2
+
+        x_offset = self.half_w * 1.5
+        if self.face_dir == 1:
+            attack_center_x = self.x + x_offset
+        else:
+            attack_center_x = self.x - x_offset
+
+        return (attack_center_x - attack_half_w, self.y - attack_half_h,
+                attack_center_x + attack_half_w, self.y + attack_half_h)
+
+
+    def check_attack_collision(self, hit_enemies):
+        attack_bb = self.get_attack_bb()
+
+        for o in game_world.all_objects():
+            if o == self: continue
+            if isinstance(o, EnemyKnight) and o not in hit_enemies:
+                if collide(attack_bb, o.get_bb()):
+                    print("HIT THE KNIGHT!")
+                    o.take_damage(self.face_dir)
+                    hit_enemies.append(o)
 
     def update(self):
         cur = self.state_machine.cur_state
