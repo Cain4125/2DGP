@@ -1,8 +1,7 @@
-# start_map.py
 import game_world
 from ground import Ground
 import camera
-from enemy_knight import EnemyKnight  # <--- [신규] 기사 뼈대 임포트
+from enemy_knight import EnemyKnight
 
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
@@ -19,9 +18,8 @@ class StartMap:
         self.platform3 = Ground(2000, 250, 500, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        # 2. [신규] 적 뼈대
-        # (스컬(target)과 발판 목록(platforms)을 뼈대로 넘겨줌)
-        self.knight = EnemyKnight(1500, 210, self.skull, self.platforms)  # 800, 135 위치에 스폰
+
+        self.knight = EnemyKnight(700, 210, self.skull, self.platforms)
 
     def enter(self):
         game_world.clear()
@@ -30,7 +28,7 @@ class StartMap:
         for p in self.platforms:
             game_world.add_object(p, 0)
 
-        game_world.add_object(self.knight, 1)  # <--- [신규] 기사도 월드에 추가
+        game_world.add_object(self.knight, 1)
 
         self.skull.platforms = self.platforms
 
