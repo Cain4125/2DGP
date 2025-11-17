@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time
+from pico2d import load_image, get_time, draw_rectangle
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
 
 import game_world
@@ -516,22 +516,8 @@ class Skull:
                 return
 
     def get_attack_bb(self):
-        # 공격 사거리: 상수와 맞춰서 관리 (constants.ATTACK_RANGE 사용)
-        reach = ATTACK_RANGE  # 150 정도
-        body_half_w = self.half_w  # 몸 반폭
-        attack_half_h = self.half_h  # 세로는 몸 높이 기준
+        return self.get_bb()
 
-        if self.face_dir == 1:  # 오른쪽
-            left = self.x + body_half_w  # 몸 오른쪽 끝부터
-            right = left + reach  # 그 앞 reach만큼
-        else:  # 왼쪽
-            right = self.x - body_half_w  # 몸 왼쪽 끝까지
-            left = right - reach  # 그 앞 reach만큼
-
-        bottom = self.y - attack_half_h
-        top = self.y + attack_half_h
-
-        return left, bottom, right, top
 
     def check_attack_collision(self, hit_enemies):
         attack_bb = self.get_attack_bb()
@@ -594,6 +580,8 @@ class Skull:
 
     def draw(self, camera_x, camera_y):
         self.state_machine.draw(camera_x, camera_y)
+        lx, by, rx, ty = self.get_attack_bb()
+        draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
     def fire_ball(self):
         ball = Ball(self.x, self.y, self.face_dir * 10, self.world_w)
@@ -608,10 +596,6 @@ class Skull:
 
     def get_bb(self):
         current_w, current_H = 50, 50
-        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
-            current_w, current_H = 100, 100
-        elif self.state_machine.cur_state == self.JUMP:
-            current_w, current_H = 45, 50
 
         half_w = (current_w * SCALE) / 2
         half_h = (current_H * SCALE) / 2

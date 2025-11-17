@@ -1,4 +1,4 @@
-from pico2d import load_image
+from pico2d import load_image, draw_rectangle
 import game_framework
 import game_world
 import camera
@@ -218,8 +218,10 @@ class EnemyKnight:
         self.dir = 0
         self.vy = 0.0
         self.on_ground = True
-        self.half_w = (100 * SCALE) / 2
-        self.half_h = (100 * SCALE) / 2
+        self.cell_w = 50
+        self.cell_h = 50
+        self.half_w = (self.cell_w * SCALE) / 2
+        self.half_h = (self.cell_h * SCALE) / 2
         self.target = target
         self.platforms = platforms
         self.attack_cooldown = 0.0
@@ -297,3 +299,5 @@ class EnemyKnight:
 
     def draw(self, camera_x, camera_y):
         self.cur_state.draw(camera_x, camera_y)
+        lx, by, rx, ty = self.get_bb()
+        draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
