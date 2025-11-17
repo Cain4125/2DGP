@@ -161,33 +161,29 @@ class Hit:
             Hit.image = load_image('knight_hit.png')
         self.cell_w = 50
         self.cell_h = 100
-        self.anim = 0.0
-        self.hold = 0.0
+        self.anim_duration = 0.0
+        self.state_duration = 0.0
 
     def enter(self, attacker_face_dir):
         self.knight.set_sprite_size(self.cell_w, self.cell_h)
         self.knight.f_frame = 0.0
         self.knight.frame = 0
         if attacker_face_dir:
-            self.knight.knockback_dir = -attacker_face_dir
+            # [수정됨] 넉백 방향을 반대로 (공격자 방향과 동일하게)
+            self.knight.knockback_dir = attacker_face_dir
         else:
             self.knight.knockback_dir = 0
-        self.anim = 2.0 / ENEMY_HIT_FPS
-        self.hold = 1.0
+        self.anim_duration = 2.0 / ENEMY_HIT_FPS
+        # [수정됨] Hit 상태 지속 시간을 1.3초로
+        self.state_duration = 1.3
 
     def exit(self):
         pass
 
     def do(self):
-        if self.anim > 0:
-            self.anim -= game_framework.frame_time
-            self.knight.f_frame = (self.knight.f_frame + ENEMY_HIT_FPS * game_framework.frame_time) % 2
-            self.knight.frame = int(self.knight.f_frame)
-            self.knight.x += self.knight.knockback_dir * KNOCKBACK_SPEED_PPS * game_framework.frame_time
-        elif self.hold > 0:
-            self.knight.frame = 1
-            self.hold -= game_framework.frame_time
-        else:
+        self.state_duration -= game_framework.frame_time
+
+        if self.state_duration <= 0:
             if not self.knight.target:
                 self.knight.change_state(self.knight.IDLE, None)
                 return
@@ -196,6 +192,15 @@ class Hit:
                 self.knight.change_state(self.knight.RUN, None)
             else:
                 self.knight.change_state(self.knight.IDLE, None)
+            return
+
+        if self.anim_duration > 0:
+            self.anim_duration -= game_framework.frame_time
+            self.knight.f_frame = (self.knight.f_frame + ENEMY_HIT_FPS * game_framework.frame_time) % 2
+            self.knight.frame = int(self.knight.f_frame)
+            self.knight.x += self.knight.knockback_dir * KNOCKBACK_SPEED_PPS * game_framework.frame_time
+        else:
+            self.knight.frame = 1
 
     def draw(self, cx, cy):
         sx = self.cell_w * self.knight.frame
@@ -213,8 +218,11 @@ class Hit:
 class EnemyKnight:
     class DUMMY_JUMP:
         def enter(self, e): pass
+
         def exit(self): pass
+
         def do(self): pass
+
         def draw(self, cx, cy): pass
 
     def __init__(self, x, y, target, platforms):
@@ -254,7 +262,11 @@ class EnemyKnight:
 
     def change_state(self, new, e):
         if self.cur_state == new:
-            return
+            if self.cur_state == self.HIT:
+                pass
+            else:
+                return
+
         self.cur_state.exit()
         self.cur_state = new
         self.cur_state.enter(e)
@@ -289,8 +301,7 @@ class EnemyKnight:
                 return
 
     def take_damage(self, face):
-        if self.cur_state != self.HIT:
-            self.change_state(self.HIT, face)
+        self.change_state(self.HIT, face)
 
     def update(self):
         self.attack_cooldown -= game_framework.frame_time
