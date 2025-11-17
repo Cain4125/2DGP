@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time, draw_rectangle
+from pico2d import load_image, get_time, draw_rectangle, clamp
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
 
 import game_world
@@ -7,6 +7,7 @@ from state_machine import StateMachine
 from ball import Ball
 from constants import *
 from enemy_knight import EnemyKnight
+
 
 def space_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
@@ -146,7 +147,8 @@ class Run:
         if self.skull.face_dir == 1:
             Run.image.clip_draw(self.skull.frame * 50, 0, 50, 50, screen_x, screen_y, 50 * SCALE, 50 * SCALE)
         else:
-            Run.image.clip_composite_draw(self.skull.frame * 50, 0, 50, 50, 0, 'h', screen_x, screen_y, 50 * SCALE, 50 * SCALE)
+            Run.image.clip_composite_draw(self.skull.frame * 50, 0, 50, 50, 0, 'h', screen_x, screen_y, 50 * SCALE,
+                                          50 * SCALE)
 
     def handle_event(self, e):
         return False
@@ -239,9 +241,11 @@ class Dash:
         screen_x = self.skull.x - camera_x
         screen_y = self.skull.y - camera_y
         if self.skull.face_dir == 1:
-            Dash.image.clip_draw(0, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            Dash.image.clip_draw(0, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE,
+                                 self.cell_h * SCALE)
         else:
-            Dash.image.clip_composite_draw(0, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            Dash.image.clip_composite_draw(0, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y,
+                                           self.cell_w * SCALE, self.cell_h * SCALE)
 
     def handle_event(self, e):
         return False
@@ -301,9 +305,11 @@ class Attack1:
         screen_x = self.skull.x - camera_x
         screen_y = draw_y - camera_y
         if self.skull.face_dir == 1:
-            Attack1.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            Attack1.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE,
+                                    self.cell_h * SCALE)
         else:
-            Attack1.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            Attack1.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y,
+                                              self.cell_w * SCALE, self.cell_h * SCALE)
 
     def handle_event(self, e):
         if x_down(e):
@@ -363,9 +369,11 @@ class Attack2:
         screen_x = self.skull.x - camera_x
         screen_y = draw_y - camera_y
         if self.skull.face_dir == 1:
-            self.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            self.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE,
+                                 self.cell_h * SCALE)
         else:
-            self.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            self.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y,
+                                           self.cell_w * SCALE, self.cell_h * SCALE)
 
     def handle_event(self, e):
         if x_down(e):
@@ -427,9 +435,11 @@ class JumpAttack:
         screen_x = self.skull.x - camera_x
         screen_y = draw_y - camera_y
         if self.skull.face_dir == 1:
-            JumpAttack.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            JumpAttack.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, self.cell_w * SCALE,
+                                       self.cell_h * SCALE)
         else:
-            JumpAttack.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y, self.cell_w * SCALE, self.cell_h * SCALE)
+            JumpAttack.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', screen_x, screen_y,
+                                                 self.cell_w * SCALE, self.cell_h * SCALE)
 
     def handle_event(self, e):
         return False
@@ -454,6 +464,8 @@ class Skull:
         self.world_w = world_w
         self.jump_count = 0
 
+        self.invincible_timer = 0.0
+
         self.IDLE = Idle(self)
         self.RUN = Run(self)
         self.JUMP = Jump(self)
@@ -470,8 +482,12 @@ class Skull:
         self.state_machine = StateMachine(
             self.IDLE,
             {
-                self.IDLE: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1, right_down: self.RUN, left_down: self.RUN, right_up: self.IDLE, left_up: self.IDLE, a_down: self.IDLE},
-                self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1, right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN, a_down: self.RUN},
+                self.IDLE: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
+                            right_down: self.RUN, left_down: self.RUN, right_up: self.IDLE, left_up: self.IDLE,
+                            a_down: self.IDLE},
+                self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
+                           right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN,
+                           a_down: self.RUN},
                 self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK},
                 self.DASH: {},
                 self.ATTACK1: {},
@@ -518,7 +534,6 @@ class Skull:
     def get_attack_bb(self):
         return self.get_bb()
 
-
     def check_attack_collision(self, hit_enemies):
         attack_bb = self.get_attack_bb()
 
@@ -530,16 +545,33 @@ class Skull:
                     o.take_damage(self.face_dir)
                     hit_enemies.append(o)
 
+    def take_damage(self, attacker_pos_x):
+        if self.invincible_timer > 0.0:
+            return
+
+        print("SKULL HIT!")
+        self.invincible_timer = 1.5
+
     def update(self):
+        if self.invincible_timer > 0.0:
+            self.invincible_timer -= game_framework.frame_time
+
         cur = self.state_machine.cur_state
+
         if cur not in (self.DASH, self.ATTACK1, self.ATTACK2):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
+
         self.y += self.vy * game_framework.frame_time
+
         if cur != self.DASH:
             self.check_ground()
         else:
             self.on_ground = False
+
         self.state_machine.update()
+
+        self.x = clamp(0 + self.half_w, self.x, self.world_w - self.half_w)
+
         cur_after_do = self.state_machine.cur_state
         if self.on_ground:
             if cur_after_do in (self.JUMP,):
@@ -579,7 +611,14 @@ class Skull:
             self.state_machine.handle_state_event(event_tuple)
 
     def draw(self, camera_x, camera_y):
-        self.state_machine.draw(camera_x, camera_y)
+        if self.invincible_timer > 0.0:
+            if int(self.invincible_timer * 10) % 2 == 0:
+                pass
+            else:
+                self.state_machine.draw(camera_x, camera_y)
+        else:
+            self.state_machine.draw(camera_x, camera_y)
+
         lx, by, rx, ty = self.get_attack_bb()
         draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
@@ -600,5 +639,4 @@ class Skull:
         half_w = (current_w * SCALE) / 2
         half_h = (current_H * SCALE) / 2
 
-        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
-
+        return self.x - half_w, self.y - self.half_h, self.x + half_w, self.y + half_h

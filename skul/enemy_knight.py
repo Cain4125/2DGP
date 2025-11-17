@@ -2,6 +2,17 @@ from pico2d import load_image, draw_rectangle
 import game_framework
 from ground import Ground
 from constants import *
+import game_world
+
+
+def collide(bb_a, bb_b):
+    left_a, bottom_a, right_a, top_a = bb_a
+    left_b, bottom_b, right_b, top_b = bb_b
+    if left_a > right_b: return False
+    if right_a < left_b: return False
+    if top_a < bottom_b: return False
+    if bottom_a > top_b: return False
+    return True
 
 
 class Idle:
@@ -105,6 +116,7 @@ class Attack:
         self.cell_h = 100
         self.played_once = False
         self.hold = 0.0
+        self.hit_checked = False
 
     def enter(self, e):
         self.knight.set_sprite_size(self.cell_w, self.cell_h)
@@ -113,6 +125,7 @@ class Attack:
         self.played_once = False
         self.knight.dir = self.knight.face_dir
         self.hold = 0.6
+        self.hit_checked = False
 
     def exit(self):
         pass
@@ -120,7 +133,15 @@ class Attack:
     def do(self):
         if not self.played_once:
             self.knight.x += self.knight.dir * ENEMY_ATTACK_MOVE_PPS * game_framework.frame_time
+
+            frame_before = int(self.knight.f_frame)
             self.knight.f_frame += ENEMY_ATTACK_FPS * game_framework.frame_time
+            frame_after = int(self.knight.f_frame)
+
+            if not self.hit_checked and frame_after >= 2 and frame_before < 2:
+                self.knight.check_attack_collision()
+                self.hit_checked = True
+
             if self.knight.f_frame >= 5.0:
                 self.played_once = True
                 self.knight.frame = 4
@@ -169,12 +190,10 @@ class Hit:
         self.knight.f_frame = 0.0
         self.knight.frame = 0
         if attacker_face_dir:
-            # [수정됨] 넉백 방향을 반대로 (공격자 방향과 동일하게)
             self.knight.knockback_dir = attacker_face_dir
         else:
             self.knight.knockback_dir = 0
         self.anim_duration = 2.0 / ENEMY_HIT_FPS
-        # [수정됨] Hit 상태 지속 시간을 1.3초로
         self.state_duration = 1.3
 
     def exit(self):
@@ -283,6 +302,31 @@ class EnemyKnight:
                 self.x + self.half_hit_w,
                 self.y - self.half_hit_h + 5)
 
+    def get_attack_bb(self):
+        attack_width = 60 * SCALE
+        attack_height = 80 * SCALE
+
+        attack_offset_x = (self.sprite_w / 2 * SCALE) * self.face_dir
+        center_x = self.x + attack_offset_x
+        center_y = self.y
+
+        return (center_x - attack_width / 2,
+                center_y - attack_height / 2,
+                center_x + attack_width / 2,
+                center_y + attack_height / 2)
+
+    def check_attack_collision(self):
+        from skull import Skull
+        if not self.target:
+            return
+
+        attack_bb = self.get_attack_bb()
+
+        if isinstance(self.target, Skull):
+            if collide(attack_bb, self.target.get_bb()):
+                print("KNIGHT HITS SKULL!")
+                self.target.take_damage(self.x)
+
     def check_ground(self):
         self.on_ground = False
         feet = self.get_bb_feet()
@@ -321,3 +365,7 @@ class EnemyKnight:
         self.cur_state.draw(cx, cy)
         lx, by, rx, ty = self.get_bb()
         draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
+
+        if self.cur_state == self.ATTACK:
+            lx, by, rx, ty = self.get_attack_bb()
+            draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
