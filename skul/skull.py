@@ -516,18 +516,22 @@ class Skull:
                 return
 
     def get_attack_bb(self):
-        attack_half_w = (100 * SCALE) / 2
-        attack_half_h = (100 * SCALE) / 2
+        # 공격 사거리: 상수와 맞춰서 관리 (constants.ATTACK_RANGE 사용)
+        reach = ATTACK_RANGE  # 150 정도
+        body_half_w = self.half_w  # 몸 반폭
+        attack_half_h = self.half_h  # 세로는 몸 높이 기준
 
-        x_offset = self.half_w * 1.5
-        if self.face_dir == 1:
-            attack_center_x = self.x + x_offset
-        else:
-            attack_center_x = self.x - x_offset
+        if self.face_dir == 1:  # 오른쪽
+            left = self.x + body_half_w  # 몸 오른쪽 끝부터
+            right = left + reach  # 그 앞 reach만큼
+        else:  # 왼쪽
+            right = self.x - body_half_w  # 몸 왼쪽 끝까지
+            left = right - reach  # 그 앞 reach만큼
 
-        return (attack_center_x - attack_half_w, self.y - attack_half_h,
-                attack_center_x + attack_half_w, self.y + attack_half_h)
+        bottom = self.y - attack_half_h
+        top = self.y + attack_half_h
 
+        return left, bottom, right, top
 
     def check_attack_collision(self, hit_enemies):
         attack_bb = self.get_attack_bb()
