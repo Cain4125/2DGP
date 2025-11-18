@@ -326,11 +326,11 @@ class EnemyKnight:
                 self.y - self.half_hit_h + 5)
 
     def get_attack_bb(self):
-        attack_width = 60 * SCALE
-        attack_height = 80 * SCALE
+        attack_width = 140
+        attack_height = 160
 
         attack_offset_x = (self.sprite_w / 2 * SCALE) * self.face_dir
-        center_x = self.x + attack_offset_x
+        center_x = self.x + attack_offset_x + 70
         center_y = self.y
 
         return (center_x - attack_width / 2,
