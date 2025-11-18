@@ -329,8 +329,9 @@ class EnemyKnight:
         attack_width = 140
         attack_height = 160
 
-        attack_offset_x = (self.sprite_w / 2 * SCALE) * self.face_dir
-        center_x = self.x + attack_offset_x + 70
+        half_sprite = (self.sprite_w / 2.0) * SCALE
+        base_offset = half_sprite - 70
+        center_x = self.x + base_offset * self.face_dir
         center_y = self.y
 
         return (center_x - attack_width / 2,
