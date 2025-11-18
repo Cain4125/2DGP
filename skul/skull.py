@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time, draw_rectangle, clamp
+from pico2d import load_image, get_time, draw_rectangle
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
 
 import game_world
@@ -406,6 +406,7 @@ class JumpAttack:
     def do(self):
         if 1 <= self.skull.frame <= 3:
             self.skull.check_attack_collision(self.hit_enemies)
+
         self.skull.recompute_dir()
         if self.skull.dir != 0:
             self.skull.face_dir = self.skull.dir
@@ -464,8 +465,6 @@ class Skull:
         self.world_w = world_w
         self.jump_count = 0
 
-        self.invincible_timer = 0.0
-
         self.IDLE = Idle(self)
         self.RUN = Run(self)
         self.JUMP = Jump(self)
@@ -502,15 +501,8 @@ class Skull:
     def check_ground(self):
         self.on_ground = False
 
-        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
-            self.half_w = (100 * SCALE) / 2
-            self.half_h = (100 * SCALE) / 2
-        elif self.state_machine.cur_state == self.JUMP:
-            self.half_w = (45 * SCALE) / 2
-            self.half_h = (50 * SCALE) / 2
-        else:
-            self.half_w = (50 * SCALE) / 2
-            self.half_h = (50 * SCALE) / 2
+        self.half_w = (50 * SCALE) / 2
+        self.half_h = (50 * SCALE) / 2
 
         my_feet = self.get_bb_feet()
         if not self.platforms:
@@ -532,46 +524,37 @@ class Skull:
                 return
 
     def get_attack_bb(self):
-        return self.get_bb()
+        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
+            atk_w = 100 * SCALE
+            atk_h = 100 * SCALE
+        else:
+            atk_w = 50 * SCALE
+            atk_h = 50 * SCALE
+
+        half_w = atk_w / 2
+        half_h = atk_h / 2
+        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
 
     def check_attack_collision(self, hit_enemies):
         attack_bb = self.get_attack_bb()
 
         for o in game_world.all_objects():
             if o == self: continue
-            if isinstance(o, EnemyKnight) and o not in hit_enemies:
+            if type(o).__name__ == 'EnemyKnight' and id(o) not in hit_enemies:
                 if collide(attack_bb, o.get_bb()):
-                    print("HIT THE KNIGHT!")
                     o.take_damage(self.face_dir)
-                    hit_enemies.append(o)
-
-    def take_damage(self, attacker_pos_x):
-        if self.invincible_timer > 0.0:
-            return
-
-        print("SKULL HIT!")
-        self.invincible_timer = 1.5
+                    hit_enemies.append(id(o))
 
     def update(self):
-        if self.invincible_timer > 0.0:
-            self.invincible_timer -= game_framework.frame_time
-
         cur = self.state_machine.cur_state
-
         if cur not in (self.DASH, self.ATTACK1, self.ATTACK2):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
-
         self.y += self.vy * game_framework.frame_time
-
         if cur != self.DASH:
             self.check_ground()
         else:
             self.on_ground = False
-
         self.state_machine.update()
-
-        self.x = clamp(0 + self.half_w, self.x, self.world_w - self.half_w)
-
         cur_after_do = self.state_machine.cur_state
         if self.on_ground:
             if cur_after_do in (self.JUMP,):
@@ -611,16 +594,9 @@ class Skull:
             self.state_machine.handle_state_event(event_tuple)
 
     def draw(self, camera_x, camera_y):
-        if self.invincible_timer > 0.0:
-            if int(self.invincible_timer * 10) % 2 == 0:
-                pass
-            else:
-                self.state_machine.draw(camera_x, camera_y)
-        else:
-            self.state_machine.draw(camera_x, camera_y)
-
+        self.state_machine.draw(camera_x, camera_y)
         lx, by, rx, ty = self.get_attack_bb()
-        draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
+        # draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
     def fire_ball(self):
         ball = Ball(self.x, self.y, self.face_dir * 10, self.world_w)
@@ -635,8 +611,6 @@ class Skull:
 
     def get_bb(self):
         current_w, current_H = 50, 50
-
         half_w = (current_w * SCALE) / 2
         half_h = (current_H * SCALE) / 2
-
-        return self.x - half_w, self.y - self.half_h, self.x + half_w, self.y + half_h
+        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
