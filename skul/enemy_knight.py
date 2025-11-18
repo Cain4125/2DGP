@@ -37,12 +37,20 @@ class Idle:
     def do(self):
         self.knight.f_frame = (self.knight.f_frame + ENEMY_IDLE_FPS * game_framework.frame_time) % 5
         self.knight.frame = int(self.knight.f_frame)
+
         if not self.knight.target:
             return
+
+        if self.knight.detected:
+            self.knight.change_state(self.knight.RUN, None)
+            return
+
         dist = self.knight.target.x - self.knight.x
+
         if abs(dist) < ATTACK_RANGE and self.knight.attack_cooldown <= 0:
             self.knight.change_state(self.knight.ATTACK, None)
         elif abs(dist) < DETECT_RANGE:
+            self.knight.detected = True
             self.knight.change_state(self.knight.RUN, None)
 
     def draw(self, cx, cy):
@@ -84,12 +92,14 @@ class Run:
             self.knight.dir = self.knight.face_dir = 1
         else:
             self.knight.dir = self.knight.face_dir = -1
+
         self.knight.f_frame = (self.knight.f_frame + ENEMY_RUN_FPS * game_framework.frame_time) % 8
         self.knight.frame = int(self.knight.f_frame)
         self.knight.x += self.knight.dir * ENEMY_RUN_SPEED_PPS * game_framework.frame_time
+
         if abs(dist) < ATTACK_RANGE and self.knight.attack_cooldown <= 0:
             self.knight.change_state(self.knight.ATTACK, None)
-        elif abs(dist) > DETECT_RANGE:
+        elif not self.knight.detected and abs(dist) > DETECT_RANGE:
             self.knight.change_state(self.knight.IDLE, None)
 
     def draw(self, cx, cy):
@@ -151,11 +161,18 @@ class Attack:
             self.hold -= game_framework.frame_time
             if self.hold <= 0:
                 self.knight.attack_cooldown = 3.0
+
+                if self.knight.detected:
+                    self.knight.change_state(self.knight.RUN, None)
+                    return
+
                 if not self.knight.target:
                     self.knight.change_state(self.knight.IDLE, None)
                     return
+
                 dist = self.knight.target.x - self.knight.x
                 if abs(dist) < DETECT_RANGE:
+                    self.knight.detected = True
                     self.knight.change_state(self.knight.RUN, None)
                 else:
                     self.knight.change_state(self.knight.IDLE, None)
@@ -195,6 +212,7 @@ class Hit:
             self.knight.knockback_dir = 0
         self.anim_duration = 2.0 / ENEMY_HIT_FPS
         self.state_duration = 1.3
+        self.knight.detected = True
 
     def exit(self):
         pass
@@ -203,6 +221,10 @@ class Hit:
         self.state_duration -= game_framework.frame_time
 
         if self.state_duration <= 0:
+            if self.knight.detected:
+                self.knight.change_state(self.knight.RUN, None)
+                return
+
             if not self.knight.target:
                 self.knight.change_state(self.knight.IDLE, None)
                 return
@@ -252,6 +274,7 @@ class EnemyKnight:
         self.dir = 0
         self.vy = 0.0
         self.on_ground = True
+        self.detected = False
 
         self.sprite_w = 50
         self.sprite_h = 100
@@ -317,6 +340,7 @@ class EnemyKnight:
 
     def check_attack_collision(self):
         from skull import Skull
+
         if not self.target:
             return
 
