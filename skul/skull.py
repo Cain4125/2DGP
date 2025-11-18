@@ -526,16 +526,7 @@ class Skull:
                 return
 
     def get_attack_bb(self):
-        if self.state_machine.cur_state in (self.ATTACK1, self.ATTACK2, self.JUMP_ATTACK):
-            atk_w = 100 * SCALE
-            atk_h = 100 * SCALE
-        else:
-            atk_w = 50 * SCALE
-            atk_h = 50 * SCALE
-
-        half_w = atk_w / 2
-        half_h = atk_h / 2
-        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+        return self.get_bb()
 
     def check_attack_collision(self, hit_enemies):
         attack_bb = self.get_attack_bb()
