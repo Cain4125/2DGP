@@ -7,6 +7,7 @@ from state_machine import StateMachine
 from ball import Ball
 from constants import *
 from enemy_knight import EnemyKnight
+import lobby_mode
 
 
 def space_down(e):
@@ -464,7 +465,7 @@ class Skull:
         self.world_w = world_w
         self.jump_count = 0
 
-        # [신규] 무적 시간 추가
+        # 무적 시간
         self.invincible_timer = 0.0
 
         self.IDLE = Idle(self)
@@ -474,6 +475,8 @@ class Skull:
         self.ATTACK1 = Attack1(self)
         self.ATTACK2 = Attack2(self)
         self.JUMP_ATTACK = JumpAttack(self)
+        self.max_hp = SKULL_MAX_HP
+        self.current_hp = SKULL_MAX_HP
 
         def z_down_with_cooldown(e):
             is_z = z_down(e)
@@ -535,19 +538,23 @@ class Skull:
             if o == self: continue
             if type(o).__name__ == 'EnemyKnight' and id(o) not in hit_enemies:
                 if collide(attack_bb, o.get_bb()):
-                    o.take_damage(self.face_dir)
+                    o.take_damage(SKULL_ATTACK_DAMAGE, self.face_dir)
                     hit_enemies.append(id(o))
 
-    # [신규] 피격 함수 추가
     def take_damage(self, attacker_pos_x):
         if self.invincible_timer > 0.0:
             return
+        self.current_hp -= ENEMY_KNIGHT_ATTACK_DAMAGE
+        print(f"SKULL HIT! HP: {self.current_hp}")
 
-        print("SKULL HIT!")
+        if self.current_hp <= 0:
+            print("SKULL DIED!")
+            game_framework.run(play_mode)
+
+
         self.invincible_timer = 1.5
 
     def update(self):
-        # [신규] 무적 시간 타이머 감소
         if self.invincible_timer > 0.0:
             self.invincible_timer -= game_framework.frame_time
 
@@ -603,7 +610,6 @@ class Skull:
             self.state_machine.handle_state_event(event_tuple)
 
     def draw(self, camera_x, camera_y):
-        # [신규] 무적 시간 깜빡임 처리
         if self.invincible_timer > 0.0:
             if int(self.invincible_timer * 10) % 2 == 0:
                 pass
