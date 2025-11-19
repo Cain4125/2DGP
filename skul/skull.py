@@ -1,6 +1,7 @@
 from pico2d import load_image, get_time, draw_rectangle, clamp
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
 
+
 import game_world
 import game_framework
 from state_machine import StateMachine
@@ -477,6 +478,7 @@ class Skull:
         self.JUMP_ATTACK = JumpAttack(self)
         self.max_hp = SKULL_MAX_HP
         self.current_hp = SKULL_MAX_HP
+        self.hp_bar_image = load_image('hp.png')
 
         def z_down_with_cooldown(e):
             is_z = z_down(e)
@@ -620,6 +622,49 @@ class Skull:
 
         lx, by, rx, ty = self.get_attack_bb()
         draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
+
+        BAR_WIDTH = 50 * SCALE
+        BAR_HEIGHT = 5 * SCALE
+        BAR_OFFSET_Y = self.half_h + (10 * SCALE)
+
+        center_x = self.x - camera_x
+        center_y = self.y - camera_y + BAR_OFFSET_Y
+
+        health_ratio = self.current_hp / self.max_hp
+
+        # Coordinates for the full bar frame (Screen space)
+        bar_left = center_x - (BAR_WIDTH / 2)
+        bar_right_max = center_x + (BAR_WIDTH / 2)
+        bar_top = center_y + (BAR_HEIGHT / 2)
+        bar_bottom = center_y - (BAR_HEIGHT / 2)
+
+        # 2. Draw Background Frame (테두리만 그려서 체력 공간을 표시)
+        draw_rectangle(bar_left, bar_bottom, bar_right_max, bar_top)
+
+        # 3. Clip and Draw Foreground Image
+
+        # hp.png 전체 크기
+        src_w_full = self.hp_bar_image.w
+        src_h_full = self.hp_bar_image.h
+
+        # 현재 체력에 비례하여 잘라낼 Source width
+        src_w_clip = int(src_w_full * health_ratio)
+
+        # 화면에 그릴 Destination width
+        dest_w = int(BAR_WIDTH * health_ratio)
+
+        # 체력바가 오른쪽에서 줄어들도록 Draw X 좌표 조정
+        # (중앙점: center_x) - (손실된 너비 / 2)
+        lost_width = BAR_WIDTH - dest_w
+        draw_x_adjusted = center_x - (lost_width / 2)
+
+        if dest_w > 0:
+            self.hp_bar_image.clip_draw(
+                0, 0,  # sx, sy (클리핑 시작점)
+                src_w_clip, src_h_full,  # sw, sh (클립할 원본 이미지 영역)
+                draw_x_adjusted, center_y,  # dx, dy (화면에 그릴 중심 좌표)
+                dest_w, BAR_HEIGHT  # dw, dh (화면에 그릴 최종 크기)
+            )
 
     def fire_ball(self):
         ball = Ball(self.x, self.y, self.face_dir * 10, self.world_w)
