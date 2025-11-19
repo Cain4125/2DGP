@@ -18,7 +18,7 @@ class StartMap:
         self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [#EnemyKnight(700, 210, self.skull, self.platforms),
+        self.knights = [EnemyKnight(2000, 200, self.skull, self.platforms),
                         #EnemyKnight(800, 210, self.skull, self.platforms)
                         ]
 
