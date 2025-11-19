@@ -44,7 +44,7 @@ class Idle:
 
 
 
-        dist_x = self.knight.target.x - self.knight.x
+        dist_x = self.knight.target.x - self.knight.x + 170
 
         dist_y = abs(self.knight.target.y - self.knight.y)
         is_in_y_range = (dist_y <= 100)
