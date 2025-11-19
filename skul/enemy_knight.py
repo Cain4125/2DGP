@@ -25,6 +25,7 @@ class Idle:
         self.cell_w = 50
         self.cell_h = 100
 
+
     def enter(self, e):
         self.knight.set_sprite_size(self.cell_w, self.cell_h)
         self.knight.f_frame = 0.0
@@ -298,6 +299,10 @@ class EnemyKnight:
         self.cur_state = self.IDLE
         self.cur_state.enter(None)
 
+        self.max_hp = ENEMY_KNIGHT_MAX_HP
+        self.current_hp = ENEMY_KNIGHT_MAX_HP
+        self.alive = True
+
     def set_sprite_size(self, w, h):
         self.sprite_w = w
         self.sprite_h = h
@@ -369,8 +374,30 @@ class EnemyKnight:
                 self.y = b[3] + self.half_hit_h
                 return
 
-    def take_damage(self, face):
-        self.change_state(self.HIT, face)
+    def take_damage(self, damage_amount, attacker_face_dir):
+        if not self.alive:
+            return
+
+        self.current_hp -= damage_amount
+        print(f"KNIGHT HIT! HP: {self.current_hp}")
+
+        if self.current_hp <= 0:
+            self.alive = False
+
+            y_offset_to_sink =(self.hit_h * SCALE / 2) - (17 * SCALE / 2) + 7
+
+            dead_knight_body = DeadEnemy(
+                self.x,
+                self.y - y_offset_to_sink,
+                'knight_dead.png',
+                72,
+                17,
+                6.0
+            )
+            game_world.add_object(dead_knight_body, 0)
+
+        if self.alive:
+            self.change_state(self.HIT, attacker_face_dir)
 
     def update(self):
         self.attack_cooldown -= game_framework.frame_time
@@ -385,8 +412,13 @@ class EnemyKnight:
                 self.y = hard_y
                 self.vy = 0
                 self.on_ground = True
+        if not self.alive:
+            game_world.remove_object(self)
+            return
 
     def draw(self, cx, cy):
+        if not self.alive:
+            return
         self.cur_state.draw(cx, cy)
         lx, by, rx, ty = self.get_bb()
         draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
@@ -394,3 +426,29 @@ class EnemyKnight:
         if self.cur_state == self.ATTACK:
             lx, by, rx, ty = self.get_attack_bb()
             draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
+
+
+class DeadEnemy:
+
+    def __init__(self, x, y, image_name, sprite_w, sprite_h, duration=3.0):
+        self.image = load_image(image_name)
+        self.x, self.y = x, y
+        self.sprite_w = sprite_w
+        self.sprite_h = sprite_h
+        self.scale = SCALE
+        self.timer = duration
+
+    def get_bb(self):
+        half_w = (self.sprite_w * self.scale) / 2
+        half_h = (self.sprite_h * self.scale) / 2
+        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+
+    def update(self):
+        self.timer -= game_framework.frame_time
+        if self.timer <= 0:
+            game_world.remove_object(self)
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.x - camera_x
+        screen_y = self.y - camera_y
+        self.image.draw(screen_x, screen_y, self.sprite_w * self.scale, self.sprite_h * self.scale)
