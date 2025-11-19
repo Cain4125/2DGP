@@ -102,8 +102,6 @@ class TreeRun:
 
         if abs(dist_x) < ATTACK_RANGE and self.tree.attack_cooldown <= 0:
             self.tree.change_state(self.tree.ATTACK, None)
-        elif abs(dist_x) > DETECT_RANGE or not is_in_y_range:
-            self.tree.change_state(self.tree.IDLE, None)
 
     def draw(self, cx, cy):
         sx = self.cell_w * self.tree.frame
@@ -210,7 +208,7 @@ class TreeHit:
         self.tree.f_frame = 0.0
         self.tree.frame = 0
         if attacker_face_dir:
-            self.tree.knockback_dir = -attacker_face_dir
+            self.tree.knockback_dir = attacker_face_dir
         else:
             self.tree.knockback_dir = 0
         self.anim_duration = 2.0 / ENEMY_HIT_FPS
