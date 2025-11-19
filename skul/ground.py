@@ -16,7 +16,7 @@ class Ground:
 
     def draw(self, camera_x, camera_y):
         l_phys, b_phys, r_phys, t_phys = self.get_bb()
-        draw_rectangle(l_phys - camera_x, b_phys - camera_y, r_phys - camera_x, t_phys - camera_y)
+        #draw_rectangle(l_phys - camera_x, b_phys - camera_y, r_phys - camera_x, t_phys - camera_y)
         draw_y_center = (self.y + self.half_h) - (self.tile_h / 2)
         current_x_center = (self.x - self.half_w) + (self.tile_w / 2)
         right_edge = self.x + self.half_w

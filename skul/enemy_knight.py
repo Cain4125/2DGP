@@ -422,11 +422,11 @@ class EnemyKnight:
             return
         self.cur_state.draw(cx, cy)
         lx, by, rx, ty = self.get_bb()
-        draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
+        #draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
 
         if self.cur_state == self.ATTACK:
             lx, by, rx, ty = self.get_attack_bb()
-            draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
+            #draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
 
 
 class DeadEnemy:

@@ -622,7 +622,7 @@ class Skull:
             self.state_machine.draw(camera_x, camera_y)
 
         lx, by, rx, ty = self.get_attack_bb()
-        draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
+        #draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
         BAR_WIDTH = 50 * SCALE
         BAR_HEIGHT = 5 * SCALE
