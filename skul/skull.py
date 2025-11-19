@@ -458,6 +458,7 @@ class Skull:
         self.vy = 0.0
         self.left_pressed = False
         self.right_pressed = False
+        self.up_pressed = False
         self.last_dash_time = 0.0
         self.platforms = platforms
         self.on_ground = True
@@ -592,16 +593,23 @@ class Skull:
                 self.JUMP.enter(('FALL', None))
 
     def handle_event(self, event):
+        from sdl2 import SDLK_UP
+
         if event.type == SDL_KEYDOWN:
             if event.key == SDLK_RIGHT:
                 self.right_pressed = True
             elif event.key == SDLK_LEFT:
                 self.left_pressed = True
+            elif event.key == SDLK_UP:  # [추가] 윗방향키 DOWN 처리
+                self.up_pressed = True
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
                 self.right_pressed = False
             elif event.key == SDLK_LEFT:
                 self.left_pressed = False
+            elif event.key == SDLK_UP:  # [추가] 윗방향키 DOWN 처리
+                self.up_pressed = True
+
 
         event_tuple = ('INPUT', event)
         handled_by_state = False

@@ -10,15 +10,6 @@ from constants import SCALE
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
 
-def collide(bb_a, bb_b):
-    left_a, bottom_a, right_a, top_a = bb_a
-    left_b, bottom_b, right_b, top_b = bb_b
-    if left_a > right_b: return False
-    if right_a < left_b: return False
-    if top_a < bottom_b: return False
-    if bottom_a > top_b: return False
-    return True
-
 
 class Portal:
     image = None
@@ -28,8 +19,8 @@ class Portal:
             Portal.image = load_image('portal.png')
         self.x, self.y = x, y
         self.w, self.h = 176, 128
-        self.half_w = self.w * SCALE / 2
-        self.half_h = self.h * SCALE / 2
+        self.half_w = self.w * SCALE / 2.5
+        self.half_h = self.h * SCALE / 2.5
 
     def draw(self, camera_x, camera_y):
         screen_x = self.x - camera_x
@@ -41,11 +32,7 @@ class Portal:
     def update(self):
         pass
 
-    def get_bb(self):
-        return (self.x - self.half_w,
-                self.y - self.half_h,
-                self.x + self.half_w,
-                self.y + self.half_h)
+
 
 class StartMap:
     def __init__(self, skull):
@@ -62,7 +49,7 @@ class StartMap:
                         #EnemyKnight(800, 210, self.skull, self.platforms)
                         ]
 
-        portal_x = WORLD_WIDTH_PIXELS - 100
+        portal_x = WORLD_WIDTH_PIXELS - 220
         portal_y = 60 + (128 * SCALE) / 2
 
         self.portal = Portal(portal_x, portal_y)
@@ -74,7 +61,7 @@ class StartMap:
 
         for p in self.platforms:
             game_world.add_object(p, 0)
-
+        game_world.add_object(self.portal, 0)
         for e in self.knights:
             game_world.add_object(e, 1)
 
@@ -90,13 +77,12 @@ class StartMap:
         pass
 
     def update(self):
-        if collide(self.skull.get_bb(), self.portal.get_bb()):
-            # Skull의 right_pressed 플래그를 확인하여 오른쪽 키가 눌렸는지 체크
-            if self.skull.right_pressed:
-                # BattleStage로 모드 전환
-                new_mode = battle_stage.BattleStage(self.skull)
-                game_framework.change_mode(new_mode)
-                return new_mode
+        portal_proximity_x = abs(self.skull.x - self.portal.x) < 50
+
+        is_up_pressed = self.skull.up_pressed
+
+        if portal_proximity_x and is_up_pressed:
+            return 'battle_stage'
 
         return None
 

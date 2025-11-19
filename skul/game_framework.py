@@ -13,7 +13,7 @@ def change_mode(mode):
         # remove the current mode
         stack.pop()
     stack.append(mode)
-    mode.init()
+    mode.enter()
 
 
 def push_mode(mode):
@@ -21,7 +21,7 @@ def push_mode(mode):
     if (len(stack) > 0):
         stack[-1].pause()
     stack.append(mode)
-    mode.init()
+    mode.enter()
 
 
 def pop_mode():
@@ -46,7 +46,7 @@ def run(start_mode):
     global running, stack
     running = True
     stack = [start_mode]
-    start_mode.init()
+    start_mode.enter()
 
     global frame_time
     frame_time = 0.0

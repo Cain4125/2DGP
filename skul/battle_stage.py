@@ -11,7 +11,6 @@ class BattleStage:
     def __init__(self, skull):
         self.skull = skull
 
-        # 1. 발판 뼈대
         self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60)
 
         self.platforms = [self.ground]

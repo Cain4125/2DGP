@@ -12,7 +12,7 @@ current_stage = None
 WORLD_WIDTH_PIXELS = 5000
 WORLD_HEIGHT_PIXELS = 800
 
-def init():
+def enter():
     global skull_player, stages, current_stage
     skull_player = Skull(platforms=[], world_w=WORLD_WIDTH_PIXELS)
     camera.camera.set_target_and_world(skull_player, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
