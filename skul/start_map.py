@@ -18,8 +18,9 @@ class StartMap:
         self.platform3 = Ground(2000, 250, 500, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
+        self.knights = [EnemyKnight(700, 210, self.skull, self.platforms),
+                        EnemyKnight(800, 210, self.skull, self.platforms)]
 
-        self.knight = EnemyKnight(700, 210, self.skull, self.platforms)
 
     def enter(self):
         game_world.clear()
@@ -28,7 +29,8 @@ class StartMap:
         for p in self.platforms:
             game_world.add_object(p, 0)
 
-        game_world.add_object(self.knight, 1)
+        for e in self.knights:
+            game_world.add_object(e, 1)
 
         self.skull.platforms = self.platforms
 
