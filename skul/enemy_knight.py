@@ -440,8 +440,8 @@ class DeadEnemy:
 
     def get_bb(self):
         half_w = (self.sprite_w * self.scale) / 2
-        half_h = (self.sprite_h * self.scale) / 2
-        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+        half_h = (self.sprite_h * self.scale) / 2 - 30
+        return self.x - half_w, self.y - half_h - 30, self.x + half_w, self.y + half_h
 
     def update(self):
         self.timer -= game_framework.frame_time
