@@ -222,6 +222,7 @@ class Dash:
         self.was_airborne = not self.skull.on_ground
         self.skull.vy = 0
         self.skull.last_dash_time = get_time()
+        self.skull.invincible_timer = DASH_DURATION_SEC
 
     def exit(self, e):
         pass
