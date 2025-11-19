@@ -44,15 +44,14 @@ class Idle:
 
 
 
-        dist_x = self.knight.target.x - self.knight.x + 170
+        dist_x = self.knight.target.x - self.knight.x
 
         dist_y = abs(self.knight.target.y - self.knight.y)
         is_in_y_range = (dist_y <= 100)
 
-        if abs(dist_x) < ATTACK_RANGE and self.knight.attack_cooldown <= 0:
-            self.knight.change_state(self.knight.ATTACK, None)
 
-        elif abs(dist_x) < DETECT_RANGE and is_in_y_range:
+
+        if abs(dist_x) < DETECT_RANGE and is_in_y_range:
             self.knight.change_state(self.knight.RUN, None)
 
     def draw(self, cx, cy):
