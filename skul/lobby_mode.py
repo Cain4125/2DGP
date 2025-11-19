@@ -2,7 +2,7 @@ from pico2d import *
 import game_framework
 import play_mode
 
-def init():
+def enter():
     global image
     image = load_image('Title.png')
 

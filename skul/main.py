@@ -4,5 +4,5 @@ import lobby_mode
 import play_mode
 
 open_canvas(1400,800)
-game_framework.run(play_mode)
+game_framework.run(lobby_mode)
 close_canvas()
