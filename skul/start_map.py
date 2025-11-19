@@ -13,13 +13,15 @@ class StartMap:
 
         # 1. 발판 뼈대
         self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60)
-        self.platform1 = Ground(400, 200, 200, 40)
-        self.platform2 = Ground(1000, 300, 300, 40)
-        self.platform3 = Ground(2000, 250, 500, 40)
+        self.platform1 = Ground(700, 150, 200, 40)
+        self.platform2 = Ground(1050, 350, 100, 40)
+        self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [EnemyKnight(700, 210, self.skull, self.platforms),
-                        EnemyKnight(800, 210, self.skull, self.platforms)]
+        self.knights = [#EnemyKnight(700, 210, self.skull, self.platforms),
+                        #EnemyKnight(800, 210, self.skull, self.platforms)
+                        ]
+
 
 
     def enter(self):
@@ -31,6 +33,7 @@ class StartMap:
 
         for e in self.knights:
             game_world.add_object(e, 1)
+
 
         self.skull.platforms = self.platforms
 
