@@ -11,6 +11,25 @@ WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
 
 
+class FixedBackground:
+    def __init__(self):
+        self.image = load_image('sky.png')
+        self.image2 = load_image('mountain.png')
+        self.w = WORLD_WIDTH_PIXELS
+        self.h = WORLD_HEIGHT_PIXELS
+
+    def draw(self, camera_x, camera_y):
+        self.image.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+
+        self.image2.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+
+    def update(self):
+        pass
+
+    def get_bb(self):
+        return 0, 0, 0, 0
+
+
 class Portal:
     image = None
 
@@ -45,8 +64,7 @@ class StartMap:
         self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms),
-                        #EnemyKnight(800, 210, self.skull, self.platforms)
+        self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
                         ]
 
         portal_x = WORLD_WIDTH_PIXELS - 220
@@ -54,9 +72,13 @@ class StartMap:
 
         self.portal = Portal(portal_x, portal_y)
 
+        self.bg = FixedBackground()
 
     def enter(self):
         game_world.clear()
+
+        game_world.add_object(self.bg, 0)
+
         game_world.add_object(self.skull, 2)
 
         for p in self.platforms:

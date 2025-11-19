@@ -1,3 +1,4 @@
+from pico2d import load_image, draw_rectangle
 import game_world
 from ground import Ground
 import camera
@@ -7,6 +8,23 @@ from enemy_tree import EnemyTree
 WORLD_WIDTH_PIXELS = 2000
 WORLD_HEIGHT_PIXELS = 800
 
+class FixedBackground:
+    def __init__(self):
+        self.image = load_image('sky.png')
+        self.image2 = load_image('mountain.png')
+        self.w = WORLD_WIDTH_PIXELS
+        self.h = WORLD_HEIGHT_PIXELS
+
+    def draw(self, camera_x, camera_y):
+        self.image.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+
+        self.image2.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+
+    def update(self):
+        pass
+
+    def get_bb(self):
+        return 0, 0, 0, 0
 
 class BattleStage:
     def __init__(self, skull):
@@ -16,15 +34,18 @@ class BattleStage:
 
         self.platforms = [self.ground]
 
-        self.knights = [EnemyKnight(600, 150, self.skull, self.platforms),
-                        #EnemyKnight(800, 210, self.skull, self.platforms)
+        self.knights = [EnemyKnight(600, 100, self.skull, self.platforms),
+                        EnemyKnight(1200, 100, self.skull, self.platforms)
                         ]
 
-        self.trees = [EnemyTree(1200, 90, self.skull, self.platforms),]
+        self.trees = [EnemyTree(900, 90, self.skull, self.platforms),
+                      EnemyTree(1500, 90, self.skull, self.platforms),]
 
+        self.bg = FixedBackground()
 
     def enter(self):
         game_world.clear()
+        game_world.add_object(self.bg, 0)
         game_world.add_object(self.skull, 2)
 
         for p in self.platforms:
