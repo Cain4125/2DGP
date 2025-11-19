@@ -678,7 +678,7 @@ class Skull:
             self.face_dir = 1 if self.dir > 0 else -1
 
     def get_bb(self):
-        current_w, current_H = 50, 50
+        current_w, current_H = 50, 30
         half_w = (current_w * SCALE) / 2
         half_h = (current_H * SCALE) / 2
-        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+        return self.x - half_w, self.y - half_h- 30, self.x + half_w, self.y + half_h
