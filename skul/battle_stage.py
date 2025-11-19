@@ -2,6 +2,7 @@ import game_world
 from ground import Ground
 import camera
 from enemy_knight import EnemyKnight
+from enemy_tree import EnemyTree
 
 WORLD_WIDTH_PIXELS = 2000
 WORLD_HEIGHT_PIXELS = 800
@@ -19,6 +20,7 @@ class BattleStage:
                         #EnemyKnight(800, 210, self.skull, self.platforms)
                         ]
 
+        self.trees = [EnemyTree(1200, 90, self.skull, self.platforms),]
 
 
     def enter(self):
@@ -30,6 +32,9 @@ class BattleStage:
 
         for e in self.knights:
             game_world.add_object(e, 1)
+
+        for t in self.trees:
+            game_world.add_object(t, 1)
 
 
         self.skull.platforms = self.platforms

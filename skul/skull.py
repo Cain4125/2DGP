@@ -539,17 +539,23 @@ class Skull:
         attack_bb = self.get_attack_bb()
 
         for o in game_world.all_objects():
-            if o == self: continue
-            if type(o).__name__ == 'EnemyKnight' and id(o) not in hit_enemies:
+            if o == self:
+                continue
+            if type(o).__name__ in ('EnemyKnight', 'EnemyTree') and id(o) not in hit_enemies:
                 if collide(attack_bb, o.get_bb()):
                     o.take_damage(SKULL_ATTACK_DAMAGE, self.face_dir)
                     hit_enemies.append(id(o))
 
-    def take_damage(self, attacker_pos_x):
+    def take_damage(self, damage_amount, attacker_pos_x=None):
         if self.invincible_timer > 0.0:
             return
-        self.current_hp -= ENEMY_KNIGHT_ATTACK_DAMAGE
-        print(f"SKULL HIT! HP: {self.current_hp}")
+
+        self.current_hp -= damage_amount
+
+        if self.current_hp <= 0:
+            game_framework.run(lobby_mode)
+
+        self.invincible_timer = 1.5
 
         if self.current_hp <= 0:
             print("SKULL DIED!")

@@ -26,8 +26,8 @@ class Portal:
         screen_x = self.x - camera_x
         screen_y = self.y - camera_y
         self.image.draw(screen_x, screen_y, self.w * SCALE, self.h * SCALE)
-        draw_rectangle(self.x - self.half_w - camera_x, self.y - self.half_h - camera_y,
-                       self.x + self.half_w - camera_x, self.y + self.half_h - camera_y)
+        #draw_rectangle(self.x - self.half_w - camera_x, self.y - self.half_h - camera_y,
+                     #  self.x + self.half_w - camera_x, self.y + self.half_h - camera_y)
 
     def update(self):
         pass

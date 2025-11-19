@@ -20,7 +20,7 @@ def enter():
         'start_map': StartMap(skull_player),
         'battle_stage': BattleStage(skull_player),
     }
-    current_stage = stages['start_map']
+    current_stage = stages['battle_stage']
     current_stage.enter()
 
 def finish():
