@@ -24,7 +24,7 @@ class StartMap:
 
     def enter(self):
         game_world.clear()
-        game_world.add_object(self.skull, 1)
+        game_world.add_object(self.skull, 2)
 
         for p in self.platforms:
             game_world.add_object(p, 0)

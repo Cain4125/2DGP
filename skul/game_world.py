@@ -1,6 +1,6 @@
 import camera
 
-world = [[], []]
+world = [[], [], []]
 
 def add_object(o, depth=1):
     world[depth].append(o)
@@ -27,7 +27,7 @@ def clear():
     global world
     for layer in world:
         layer.clear()
-    world = [[], []]
+    world = [[], [], []]
 
 def all_objects():
     for layer in world:
