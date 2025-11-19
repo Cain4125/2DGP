@@ -8,7 +8,7 @@ from ball import Ball
 from constants import *
 from enemy_knight import EnemyKnight
 import lobby_mode
-
+import play_mode
 
 def space_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
@@ -549,7 +549,7 @@ class Skull:
 
         if self.current_hp <= 0:
             print("SKULL DIED!")
-            game_framework.run(play_mode)
+            game_framework.run(lobby_mode)
 
 
         self.invincible_timer = 1.5
