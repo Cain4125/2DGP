@@ -13,7 +13,7 @@ WORLD_HEIGHT_PIXELS = 800
 
 class FixedBackground:
     def __init__(self):
-        self.image = load_image('sky.png')
+        self.image = load_image('sky2.png')
         self.image2 = load_image('mountain.png')
         self.w = WORLD_WIDTH_PIXELS
         self.h = WORLD_HEIGHT_PIXELS
@@ -57,7 +57,6 @@ class StartMap:
     def __init__(self, skull):
         self.skull = skull
 
-        # 1. 발판 뼈대
         self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60)
         self.platform1 = Ground(700, 150, 200, 40)
         self.platform2 = Ground(1050, 350, 100, 40)
