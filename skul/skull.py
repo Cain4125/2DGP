@@ -471,6 +471,8 @@ class Skull:
         # 무적 시간
         self.invincible_timer = 0.0
 
+        self.skill_cooldown = 0.0
+
         self.IDLE = Idle(self)
         self.RUN = Run(self)
         self.JUMP = Jump(self)
@@ -565,6 +567,12 @@ class Skull:
         self.invincible_timer = 1.5
 
     def update(self):
+        # 쿨타임
+        if self.skill_cooldown > 0:
+            self.skill_cooldown -= game_framework.frame_time
+            if self.skill_cooldown < 0:
+                self.skill_cooldown = 0
+        # 무적
         if self.invincible_timer > 0.0:
             self.invincible_timer -= game_framework.frame_time
         if self.y < 100:
@@ -579,7 +587,7 @@ class Skull:
             self.on_ground = False
         self.state_machine.update()
 
-        # [신규] 맵 밖으로 나가지 않게 고정
+        # 맵 밖으로 나가지 않게 고정
         self.x = clamp(0 + self.half_w, self.x, self.world_w - self.half_w)
 
         cur_after_do = self.state_machine.cur_state
@@ -678,8 +686,12 @@ class Skull:
             )
 
     def fire_ball(self):
+        if self.skill_cooldown > 0:
+            return
         ball = Ball(self.x, self.y, self.face_dir * 10, self.world_w)
         game_world.add_object(ball)
+
+        self.skill_cooldown = 5.0
 
     def recompute_dir(self):
         r = 1 if self.right_pressed else 0
