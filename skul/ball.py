@@ -39,8 +39,7 @@ class Ball:
         screen_y = self.y - camera_y
         self.image.draw(screen_x, screen_y, self.draw_w, self.draw_h)
 
-        l, b, r, t = self.get_bb()
-        draw_rectangle(l - camera_x, b - camera_y, r - camera_x, t - camera_y)
+
 
     def update(self):
         self.x += self.velocity * self.speed_scale
