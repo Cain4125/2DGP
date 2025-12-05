@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle
+from pico2d import load_image, draw_rectangle, load_font
 import game_world
 from ground import Ground
 import camera
@@ -9,6 +9,35 @@ from constants import SCALE
 
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
+
+# 텍스트
+class TutorialText:
+    def __init__(self, x, y, text, size=20, color=(255, 255, 255)):
+        self.x = x
+        self.y = y
+        self.text = text
+        self.color = color
+        try:
+            self.font = load_font('Cafe24PROUP.ttf', size)
+        except:
+            print("폰트 파일을 찾을 수 없습니다.")
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.x - camera_x
+        screen_y = self.y - camera_y
+        outline_color = (0, 0, 0)
+        self.font.draw(screen_x - 2, screen_y, self.text, outline_color)
+        self.font.draw(screen_x + 2, screen_y, self.text, outline_color)
+        self.font.draw(screen_x, screen_y - 2, self.text, outline_color)
+        self.font.draw(screen_x, screen_y + 2, self.text, outline_color)
+
+        self.font.draw(screen_x, screen_y, self.text, self.color)
+
+    def update(self):
+        pass
+
+    def get_bb(self):
+        return 0, 0, 0, 0
 
 # 배경장식
 class Decoration:
@@ -95,6 +124,16 @@ class StartMap:
             Decoration(2600, 'Tree04.png')
         ]
 
+        self.tutorial_texts = [
+            TutorialText(550, 220, "SPACE (Jump)", size=25, color=(255, 255, 255)),
+
+            TutorialText(850, 450, "SPACE x 2 (Double Jump)", size=25, color=(255, 255, 255)),
+
+            TutorialText(1300, 500, "SPACE + Z (Dash)", size=25, color=(255, 255, 255)),
+
+            TutorialText(1200, 200, "Attack: X / Skill: A", size=25, color=(255, 50, 50))
+        ]
+
         portal_x = WORLD_WIDTH_PIXELS - 220
         portal_y = 60 + (128 * SCALE) / 2
 
@@ -118,6 +157,8 @@ class StartMap:
         for e in self.knights:
             game_world.add_object(e, 1)
 
+        for text in self.tutorial_texts:
+            game_world.add_object(text, 2)
 
         self.skull.platforms = self.platforms
 
