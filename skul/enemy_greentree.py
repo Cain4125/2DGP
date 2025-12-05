@@ -82,12 +82,18 @@ class GreenTreeAttack:
         if GreenTreeAttack.image is None:
             GreenTreeAttack.image = load_image('greentree_attack.png')
 
-        # [수정] 656 / 8 = 82
+
         self.cell_w = 82
         self.cell_h = 68
 
+        self.wait_time = 0.0
+        self.wait_done = False
+
         self.played_once = False
         self.hold = 0.0
+
+        self.wait_time = 1.0
+        self.wait_done = False
 
     def enter(self, e):
         self.tree.f_frame = 0.0
@@ -96,7 +102,9 @@ class GreenTreeAttack:
         self.tree.dir = self.tree.face_dir
         self.hold = 0.8
 
-        # 상태 변경 시 스프라이트 크기 정보 업데이트
+        self.wait_time = 1.0
+        self.wait_done = False
+
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
 
@@ -107,11 +115,21 @@ class GreenTreeAttack:
         if not self.played_once:
             self.tree.f_frame += ENEMY_ATTACK_FPS * game_framework.frame_time
 
-            if self.tree.f_frame >= 8.0:
-                self.played_once = True
-                self.tree.frame = 7
+            if self.tree.f_frame >= 3.0 and not self.wait_done:
+                self.tree.frame = 2
+                self.tree.f_frame = 2.9
+                self.wait_time -= game_framework.frame_time
+                if self.wait_time <= 0:
+                    self.wait_done = True
+                    self.tree.f_frame = 3.0
+                    # 공격코드 넣을곳
+
             else:
-                self.tree.frame = int(self.tree.f_frame)
+                if self.tree.f_frame >= 8.0:
+                    self.played_once = True
+                    self.tree.frame = 7
+                else:
+                    self.tree.frame = int(self.tree.f_frame)
         else:
             self.hold -= game_framework.frame_time
             if self.hold <= 0:
