@@ -543,7 +543,7 @@ class Skull:
         for o in game_world.all_objects():
             if o == self:
                 continue
-            if type(o).__name__ in ('EnemyKnight', 'EnemyTree') and id(o) not in hit_enemies:
+            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree') and id(o) not in hit_enemies:
                 if collide(attack_bb, o.get_bb()):
                     o.take_damage(SKULL_ATTACK_DAMAGE, self.face_dir)
                     hit_enemies.append(id(o))

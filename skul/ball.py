@@ -49,7 +49,7 @@ class Ball:
 
     def check_collision_with_enemies(self):
         for o in game_world.all_objects():
-            if type(o).__name__ in ('EnemyKnight', 'EnemyTree'):
+            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree'):
                 if collide(self.get_bb(), o.get_bb()):
                     knockback_dir = 1 if self.velocity > 0 else -1
                     o.take_damage(self.damage, knockback_dir)
