@@ -22,13 +22,19 @@ class GreenTreeIdle:
         self.tree = tree
         if GreenTreeIdle.image is None:
             GreenTreeIdle.image = load_image('greentree_idle.png')
-        self.cell_w = 50
-        self.cell_h = 100
+
+        # [수정] 300 / 5 = 60
+        self.cell_w = 60
+        self.cell_h = 66
 
     def enter(self, e):
         self.tree.f_frame = 0.0
         self.tree.frame = 0
         self.tree.dir = 0
+
+        # 상태 변경 시 스프라이트 크기 정보 업데이트 (드로잉 보정용)
+        self.tree.sprite_w = self.cell_w
+        self.tree.sprite_h = self.cell_h
 
     def exit(self):
         pass
@@ -75,8 +81,11 @@ class GreenTreeAttack:
         self.tree = tree
         if GreenTreeAttack.image is None:
             GreenTreeAttack.image = load_image('greentree_attack.png')
-        self.cell_w = 50
-        self.cell_h = 100
+
+        # [수정] 656 / 8 = 82
+        self.cell_w = 82
+        self.cell_h = 68
+
         self.played_once = False
         self.hold = 0.0
 
@@ -86,6 +95,10 @@ class GreenTreeAttack:
         self.played_once = False
         self.tree.dir = self.tree.face_dir
         self.hold = 0.8
+
+        # 상태 변경 시 스프라이트 크기 정보 업데이트
+        self.tree.sprite_w = self.cell_w
+        self.tree.sprite_h = self.cell_h
 
     def exit(self):
         pass
@@ -125,8 +138,11 @@ class GreenTreeHit:
         self.tree = tree
         if GreenTreeHit.image is None:
             GreenTreeHit.image = load_image('greentree_hit.png')
-        self.cell_w = 50
-        self.cell_h = 100
+
+        # [수정] 124 / 2 = 62
+        self.cell_w = 62
+        self.cell_h = 66
+
         self.anim_duration = 0.0
         self.state_duration = 0.0
 
@@ -140,6 +156,10 @@ class GreenTreeHit:
 
         self.anim_duration = 0.2
         self.state_duration = 0.5
+
+        # 상태 변경 시 스프라이트 크기 정보 업데이트
+        self.tree.sprite_w = self.cell_w
+        self.tree.sprite_h = self.cell_h
 
     def exit(self):
         pass
@@ -191,8 +211,9 @@ class EnemyGreenTree:
         self.vy = 0.0
         self.on_ground = True
 
-        self.sprite_w = 50
-        self.sprite_h = 100
+        # 초기 상태는 IDLE이므로 IDLE 크기로 설정
+        self.sprite_w = 60
+        self.sprite_h = 66
 
         self.hit_w = 50
         self.hit_h = 50
