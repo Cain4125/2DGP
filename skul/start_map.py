@@ -10,6 +10,28 @@ from constants import SCALE
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
 
+# 배경장식
+class Decoration:
+    def __init__(self, x, file_name, ground_y=60):
+        self.image = load_image(file_name)
+        self.x = x
+        self.scale = SCALE/1.5
+
+        self.w = self.image.w * self.scale
+        self.h = self.image.h * self.scale
+
+        self.y = ground_y + (self.h / 2) - 10
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.x - camera_x
+        screen_y = self.y - camera_y
+        self.image.draw(screen_x, screen_y, self.w, self.h)
+
+    def update(self):
+        pass
+
+    def get_bb(self):
+        return 0, 0, 0, 0
 
 class FixedBackground:
     def __init__(self):
@@ -66,6 +88,13 @@ class StartMap:
         self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
                         ]
 
+        self.trees = [
+            Decoration(200, 'Tree02.png'),
+            #Decoration(900, 'Tree01.png'),
+            Decoration(1800, 'Tree03.png'),
+            Decoration(2600, 'Tree04.png')
+        ]
+
         portal_x = WORLD_WIDTH_PIXELS - 220
         portal_y = 60 + (128 * SCALE) / 2
 
@@ -77,6 +106,9 @@ class StartMap:
         game_world.clear()
 
         game_world.add_object(self.bg, 0)
+
+        for tree in self.trees:
+            game_world.add_object(tree, 0)
 
         game_world.add_object(self.skull, 2)
 
