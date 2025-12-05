@@ -498,7 +498,7 @@ class Skull:
                 self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
                            right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN,
                            a_down: self.RUN},
-                self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK},
+                self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK, a_down: self.JUMP},
                 self.DASH: {},
                 self.ATTACK1: {},
                 self.ATTACK2: {},
