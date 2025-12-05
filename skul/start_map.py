@@ -3,6 +3,7 @@ import game_world
 from ground import Ground
 import camera
 from enemy_knight import EnemyKnight
+from enemy_greentree import EnemyGreenTree
 import game_framework
 import battle_stage
 from constants import SCALE
@@ -116,7 +117,7 @@ class StartMap:
 
         self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
                         ]
-
+        self.tree = [EnemyGreenTree(1600, 100, self.skull, self.platforms),]
         self.trees = [
             Decoration(200, 'Tree02.png'),
             #Decoration(900, 'Tree01.png'),
@@ -158,7 +159,8 @@ class StartMap:
         game_world.add_object(self.portal, 0)
         for e in self.knights:
             game_world.add_object(e, 1)
-
+        for z in self.tree:
+            game_world.add_object(z, 1)
         for text in self.tutorial_texts:
             game_world.add_object(text, 2)
 
