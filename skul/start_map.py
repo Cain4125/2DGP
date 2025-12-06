@@ -7,6 +7,7 @@ from enemy_greentree import EnemyGreenTree
 import game_framework
 import battle_stage
 from constants import SCALE
+from spikepit import SpikePit
 
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
@@ -125,6 +126,10 @@ class StartMap:
             Decoration(2600, 'Tree04.png')
         ]
 
+        self.spikes = [
+            SpikePit(700, 314, self.skull, True)
+        ]
+
         self.tutorial_texts = [
             TutorialText(550, 220, "SPACE (Jump)", size=25, color=(255, 255, 255)),
 
@@ -159,8 +164,8 @@ class StartMap:
         game_world.add_object(self.portal, 0)
         for e in self.knights:
             game_world.add_object(e, 1)
-        # for z in self.tree:
-        #     game_world.add_object(z, 1)
+        for z in self.spikes:
+            game_world.add_object(z, 1)
         for text in self.tutorial_texts:
             game_world.add_object(text, 2)
 
