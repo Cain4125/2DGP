@@ -115,7 +115,7 @@ class StartMap:
         self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
+        self.knights = [EnemyKnight(1600, 700, self.skull, self.platforms)
                         ]
         self.tree = [EnemyGreenTree(1600, 100, self.skull, self.platforms),]
         self.trees = [
@@ -159,8 +159,8 @@ class StartMap:
         game_world.add_object(self.portal, 0)
         for e in self.knights:
             game_world.add_object(e, 1)
-        for z in self.tree:
-            game_world.add_object(z, 1)
+        # for z in self.tree:
+        #     game_world.add_object(z, 1)
         for text in self.tutorial_texts:
             game_world.add_object(text, 2)
 
