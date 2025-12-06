@@ -139,6 +139,8 @@ class TreeAttack:
         self.played_once = False
         self.hold = 0.0
         self.hit_checked = False
+        self.wait_time = 0.0
+        self.wait_done = False
 
     def enter(self, e):
         self.tree.set_sprite_size(self.cell_w, self.cell_h)
@@ -148,11 +150,20 @@ class TreeAttack:
         self.tree.dir = self.tree.face_dir
         self.hold = 0.6
         self.hit_checked = False
+        self.wait_time = 0.5
+        self.wait_done = False
 
     def exit(self):
         pass
 
     def do(self):
+        if not self.wait_done:
+            self.wait_time -= game_framework.frame_time
+            self.tree.frame = 0
+            if self.wait_time <= 0:
+                self.wait_done = True
+            return
+
         if not self.played_once:
             self.tree.x += self.tree.dir * (ENEMY_ATTACK_FPS-1.5) * game_framework.frame_time
 
