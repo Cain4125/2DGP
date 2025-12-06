@@ -109,7 +109,7 @@ class StartMap:
     def __init__(self, skull):
         self.skull = skull
 
-        self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60)
+        self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60, is_main=True)
         self.platform1 = Ground(700, 150, 200, 40)
         self.platform2 = Ground(1050, 350, 100, 40)
         self.platform3 = Ground(1600, 350, 300, 40)

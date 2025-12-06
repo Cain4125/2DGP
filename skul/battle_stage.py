@@ -30,7 +30,7 @@ class BattleStage:
     def __init__(self, skull):
         self.skull = skull
 
-        self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60)
+        self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60, is_main=True)
 
         self.platforms = [self.ground]
 

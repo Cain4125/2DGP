@@ -5,21 +5,24 @@ class Ground:
     image = None
     image_left = None
     image_right = None
+    image_fill = None
 
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, is_main=False):
         if Ground.image is None:
             Ground.image = load_image('Grass_tile.png')
         if Ground.image_left is None:
             Ground.image_left = load_image('Grass_left_edge_tile.png')
         if Ground.image_right is None:
             Ground.image_right = load_image('Grass_right_edge_tile.png')
+        if Ground.image_fill is None:
+            Ground.image_fill = load_image('Fill_tile.png')
         self.tile_w = 32
         self.tile_h = 32
         self.x = x
         self.y = y
         self.half_w = w / 2
         self.half_h = h / 2
-
+        self.is_main = is_main
     def draw(self, camera_x, camera_y):
         # l_phys, b_phys, r_phys, t_phys = self.get_bb()
         #draw_rectangle(l_phys - camera_x, b_phys - camera_y, r_phys - camera_x, t_phys - camera_y)
@@ -46,6 +49,21 @@ class Ground:
 
             current_x += self.tile_w
 
+        if self.is_main:
+            fill_y = draw_y_center - self.tile_h
+
+            while fill_y > -100:
+                current_x = start_x
+                while current_x < (right_edge + self.tile_w / 2):
+                    screen_x = current_x - camera_x
+                    screen_y = fill_y - camera_y
+
+                    if -50 < screen_x < 1600 + 50 and -50 < screen_y < 900 + 50:
+                        self.image_fill.draw(screen_x, screen_y)
+
+                    current_x += self.tile_w
+
+                fill_y -= self.tile_h
     def update(self):
         pass
 
