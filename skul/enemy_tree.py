@@ -46,9 +46,17 @@ class TreeIdle:
         dist_y = abs(self.tree.target.y - self.tree.y)
         is_in_y_range = (dist_y <= 100)
 
-        if abs(dist_x) < ATTACK_RANGE and self.tree.attack_cooldown <= 0:
-            self.tree.change_state(self.tree.ATTACK, None)
-        elif abs(dist_x) < DETECT_RANGE and is_in_y_range:
+        if dist_x > 0:
+            self.tree.face_dir = 1
+        else:
+            self.tree.face_dir = -1
+
+        if abs(dist_x) < ATTACK_RANGE:
+            if self.tree.attack_cooldown <= 0:
+                self.tree.change_state(self.tree.ATTACK, None)
+            return
+
+        if abs(dist_x) < DETECT_RANGE and is_in_y_range:
             self.tree.change_state(self.tree.RUN, None)
 
     def draw(self, cx, cy):
@@ -89,7 +97,13 @@ class TreeRun:
 
         dist_x = self.tree.target.x - self.tree.x
         dist_y = abs(self.tree.target.y - self.tree.y)
-        is_in_y_range = (dist_y <= 100)
+
+        if abs(dist_x) < ATTACK_RANGE:
+            if self.tree.attack_cooldown <= 0:
+                self.tree.change_state(self.tree.ATTACK, None)
+            else:
+                self.tree.change_state(self.tree.IDLE, None)
+            return
 
         if dist_x > 0:
             self.tree.dir = self.tree.face_dir = 1
@@ -99,9 +113,6 @@ class TreeRun:
         self.tree.f_frame = (self.tree.f_frame + ENEMY_RUN_FPS * game_framework.frame_time) % 6
         self.tree.frame = int(self.tree.f_frame)
         self.tree.x += self.tree.dir * ENEMY_RUN_SPEED_PPS * game_framework.frame_time
-
-        if abs(dist_x) < ATTACK_RANGE and self.tree.attack_cooldown <= 0:
-            self.tree.change_state(self.tree.ATTACK, None)
 
     def draw(self, cx, cy):
         sx = self.cell_w * self.tree.frame
