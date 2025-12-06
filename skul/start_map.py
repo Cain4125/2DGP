@@ -127,7 +127,7 @@ class StartMap:
         ]
 
         self.spikes = [
-            SpikePit(700, 314, self.skull, True)
+            SpikePit(1050, 75, self.skull)
         ]
 
         self.tutorial_texts = [
