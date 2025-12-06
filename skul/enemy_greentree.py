@@ -201,6 +201,8 @@ class GreenTreeAttack:
     def exit(self):
         if self.current_spike and self.current_spike.state == 'WARN':
             game_world.remove_object(self.current_spike)
+        elif self.wait_done:
+            self.tree.attack_cooldown = 4.0
 
     def do(self):
         if not self.played_once:

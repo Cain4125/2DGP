@@ -49,7 +49,15 @@ class Idle:
         dist_y = abs(self.knight.target.y - self.knight.y)
         is_in_y_range = (dist_y <= 100)
 
+        if dist_x > 0:
+            self.knight.face_dir = 1
+        else:
+            self.knight.face_dir = -1
 
+        if abs(dist_x) < ATTACK_RANGE:
+            if self.knight.attack_cooldown <= 0:
+                self.knight.change_state(self.knight.ATTACK, None)
+            return
 
         if abs(dist_x) < DETECT_RANGE and is_in_y_range:
             self.knight.change_state(self.knight.RUN, None)
@@ -90,7 +98,13 @@ class Run:
             return
         dist_x = self.knight.target.x - self.knight.x
         dist_y = abs(self.knight.target.y - self.knight.y)
-        is_in_y_range = (dist_y <= 100)
+
+        if abs(dist_x) < ATTACK_RANGE:
+            if self.knight.attack_cooldown <= 0:
+                self.knight.change_state(self.knight.ATTACK, None)
+            else:
+                self.knight.change_state(self.knight.IDLE, None)
+            return
 
         if dist_x > 0:
             self.knight.dir = self.knight.face_dir = 1
@@ -100,9 +114,6 @@ class Run:
         self.knight.f_frame = (self.knight.f_frame + ENEMY_RUN_FPS * game_framework.frame_time) % 8
         self.knight.frame = int(self.knight.f_frame)
         self.knight.x += self.knight.dir * ENEMY_RUN_SPEED_PPS * game_framework.frame_time
-
-        if abs(dist_x) < ATTACK_RANGE and self.knight.attack_cooldown <= 0:
-            self.knight.change_state(self.knight.ATTACK, None)
 
     def draw(self, cx, cy):
         sx = self.cell_w * self.knight.frame
