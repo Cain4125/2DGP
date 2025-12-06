@@ -1,5 +1,5 @@
 from pico2d import load_image, get_time, draw_rectangle, clamp
-from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_a, SDLK_z, SDLK_x
+from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_DOWN, SDLK_a, SDLK_z, SDLK_x
 
 
 import game_world
@@ -170,7 +170,9 @@ class Jump:
 
     def enter(self, e):
         if space_down(e):
-            if self.skull.jump_count < 2:
+            if self.skull.down_pressed and self.skull.y > 150:
+                self.skull.y -= 50
+            elif self.skull.jump_count < 2:
                 self.skull.vy = JUMP_VY_PPS
                 self.skull.jump_count += 1
         elif e[0] == 'FALL':
@@ -483,6 +485,7 @@ class Skull:
         self.max_hp = SKULL_MAX_HP
         self.current_hp = SKULL_MAX_HP
         self.hp_bar_image = load_image('hp.png')
+        self.down_pressed = False
 
         def z_down_with_cooldown(e):
             is_z = z_down(e)
@@ -615,16 +618,19 @@ class Skull:
                 self.right_pressed = True
             elif event.key == SDLK_LEFT:
                 self.left_pressed = True
-            elif event.key == SDLK_UP:  # [추가] 윗방향키 DOWN 처리
+            elif event.key == SDLK_UP:
                 self.up_pressed = True
+            elif event.key == SDLK_DOWN:
+                self.down_pressed = True
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
                 self.right_pressed = False
             elif event.key == SDLK_LEFT:
                 self.left_pressed = False
-            elif event.key == SDLK_UP:  # [추가] 윗방향키 DOWN 처리
+            elif event.key == SDLK_UP:
                 self.up_pressed = True
-
+            elif event.key == SDLK_DOWN:
+                self.down_pressed = False
 
         event_tuple = ('INPUT', event)
         handled_by_state = False
