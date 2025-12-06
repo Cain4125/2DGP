@@ -68,6 +68,12 @@ class SpikePit:
 
     def get_bb(self):
         half_w = (self.hit_w * self.scale) / 2
-        half_h = (self.hit_h * self.scale) / 2
+        half_h = (self.hit_h * self.scale) / 3 +10
+        if self.is_ceiling:
+            bb_offset_y = -40
+        else:
+            bb_offset_y = 40
 
-        return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
+        adjusted_y = self.y + bb_offset_y
+
+        return self.x - half_w, adjusted_y - half_h, self.x + half_w, adjusted_y + half_h
