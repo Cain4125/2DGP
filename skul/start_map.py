@@ -115,7 +115,7 @@ class StartMap:
         self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [EnemyKnight(1600, 700, self.skull, self.platforms)
+        self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
                         ]
         self.tree = [EnemyGreenTree(1600, 100, self.skull, self.platforms),]
         self.trees = [
