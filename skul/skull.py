@@ -53,22 +53,6 @@ def collide(bb_a, bb_b):
     return True
 
 
-GROUND_Y = 135
-SCALE = 3
-RUN_SPEED_PPS = 5 * 60.0
-GRAVITY_PPS = 1.1 * (60.0 ** 2)
-JUMP_VY_PPS = 16.0 * 60.0
-DASH_SPEED_PPS = RUN_SPEED_PPS * 3.0
-DASH_DURATION_SEC = 0.25
-DASH_COOLDOWN_SEC = 0.7
-ATTACK_MOVE_PPS = RUN_SPEED_PPS / 4.0
-ATTACK_FPS = 12.0
-IDLE_FPS = 8.0
-RUN_FPS = 12.0
-JUMP_FPS = 6.0
-JUMP_ATTACK_FPS = 15.0
-
-
 class Idle:
     image = None
 
