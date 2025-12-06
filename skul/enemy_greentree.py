@@ -54,7 +54,7 @@ class GreenTreeIdle:
         else:
             self.tree.face_dir = -1
 
-        detect_range_x = DETECT_RANGE * 2.5
+        detect_range_x = DETECT_RANGE * 2.0
         detect_range_y = 350
 
         if abs(dist_x) < detect_range_x and dist_y <= detect_range_y and self.tree.attack_cooldown <= 0:
@@ -73,6 +73,89 @@ class GreenTreeIdle:
         else:
             GreenTreeIdle.image.clip_composite_draw(sx, 0, self.cell_w, self.cell_h, 0, 'h', x, y, w, h)
 
+
+class Spike:
+    image_warn = None
+    image_thorn = None
+
+    def __init__(self, x, y, target, damage=10):
+        self.x = x
+        self.y = y
+        self.target = target
+        self.damage = damage
+        self.scale = SCALE
+
+        if Spike.image_warn is None:
+            Spike.image_warn = load_image('greentree_attacksign.png')
+        if Spike.image_thorn is None:
+            Spike.image_thorn = load_image('greentree_thorn.png')
+
+
+        self.state = 'WARN'
+        self.timer = 0.0
+
+        self.warn_w = 127
+        self.warn_h = 30
+        self.warn_duration = 1.0
+
+        self.thorn_frame_count = 8
+        self.thorn_w = 125
+        self.thorn_h = 60
+        self.thorn_fps = 15.0
+
+        self.frame = 0
+        self.f_frame = 0.0
+
+        self.hit_player = False
+
+    def update(self):
+        self.timer += game_framework.frame_time
+
+        if self.state == 'WARN':
+            if self.timer >= self.warn_duration:
+                self.state = 'ATTACK'
+                self.timer = 0.0
+                self.f_frame = 0.0
+                self.frame = 0
+
+        elif self.state == 'ATTACK':
+            self.f_frame += self.thorn_fps * game_framework.frame_time
+            self.frame = int(self.f_frame)
+
+            if 1 <= self.frame <= 6 and not self.hit_player:
+                self.check_collision()
+
+            if self.frame >= self.thorn_frame_count:
+                game_world.remove_object(self)
+
+    def draw(self, camera_x, camera_y):
+        screen_x = self.x - camera_x
+
+        if self.state == 'WARN':
+            if int(self.timer * 20) % 2 == 0:
+                screen_y = (self.y - camera_y) + (self.warn_h * self.scale / 2)
+                self.image_warn.clip_draw(
+                    0, 0, self.warn_w, self.warn_h,
+                    screen_x, screen_y,
+                    self.warn_w * self.scale, self.warn_h * self.scale
+                )
+        elif self.state == 'ATTACK':
+            screen_y = (self.y - camera_y) + (self.thorn_h * self.scale / 2)
+            self.image_thorn.clip_draw(
+                self.frame * self.thorn_w, 0, self.thorn_w, self.thorn_h,
+                screen_x, screen_y,
+                self.thorn_w * self.scale, self.thorn_h * self.scale
+            )
+
+    def get_bb(self):
+        half_w = (self.thorn_w * self.scale) / 4
+        half_h = (self.thorn_h * self.scale) / 2
+        return self.x - half_w, self.y, self.x + half_w, self.y + (half_h * 2)
+
+    def check_collision(self):
+        if self.target and collide(self.get_bb(), self.target.get_bb()):
+            self.target.take_damage(self.damage, self.x)
+            self.hit_player = True
 
 class GreenTreeAttack:
     image = None
@@ -95,6 +178,8 @@ class GreenTreeAttack:
         self.wait_time = 1.0
         self.wait_done = False
 
+        self.spike_spawned = False
+
     def enter(self, e):
         self.tree.f_frame = 0.0
         self.tree.frame = 0
@@ -102,8 +187,9 @@ class GreenTreeAttack:
         self.tree.dir = self.tree.face_dir
         self.hold = 0.8
 
-        self.wait_time = 1.0
+        self.wait_time = 0.7
         self.wait_done = False
+        self.spike_spawned = False
 
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
@@ -118,11 +204,17 @@ class GreenTreeAttack:
             if self.tree.f_frame >= 3.0 and not self.wait_done:
                 self.tree.frame = 2
                 self.tree.f_frame = 2.9
+                if not self.spike_spawned:
+                    if self.tree.target:
+                        target_foot_y = self.tree.target.y - (50 * SCALE / 2) -10
+                        spike = Spike(self.tree.target.x, target_foot_y, self.tree.target)
+                        game_world.add_object(spike, 1)
+
+                    self.spike_spawned = True
                 self.wait_time -= game_framework.frame_time
                 if self.wait_time <= 0:
                     self.wait_done = True
                     self.tree.f_frame = 3.0
-                    # 공격코드 넣을곳
 
             else:
                 if self.tree.f_frame >= 8.0:
@@ -344,7 +436,7 @@ class DeadGreenTree:
         self.x, self.y = x, y
         self.sprite_w = sprite_w
         self.sprite_h = sprite_h
-        self.scale = SCALE
+        self.scale = SCALE/1.2
         self.timer = duration
 
     def update(self):
