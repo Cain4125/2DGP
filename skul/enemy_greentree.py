@@ -180,6 +180,8 @@ class GreenTreeAttack:
 
         self.spike_spawned = False
 
+        self.current_spike = None
+
     def enter(self, e):
         self.tree.f_frame = 0.0
         self.tree.frame = 0
@@ -190,12 +192,15 @@ class GreenTreeAttack:
         self.wait_time = 0.7
         self.wait_done = False
         self.spike_spawned = False
+        self.current_spike = None
 
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
 
+
     def exit(self):
-        pass
+        if self.current_spike and self.current_spike.state == 'WARN':
+            game_world.remove_object(self.current_spike)
 
     def do(self):
         if not self.played_once:
@@ -207,8 +212,8 @@ class GreenTreeAttack:
                 if not self.spike_spawned:
                     if self.tree.target:
                         target_foot_y = self.tree.target.y - (50 * SCALE / 2) -10
-                        spike = Spike(self.tree.target.x, target_foot_y, self.tree.target)
-                        game_world.add_object(spike, 1)
+                        self.current_spike = Spike(self.tree.target.x, target_foot_y, self.tree.target)
+                        game_world.add_object(self.current_spike, 1)
 
                     self.spike_spawned = True
                 self.wait_time -= game_framework.frame_time
