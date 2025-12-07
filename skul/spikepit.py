@@ -63,8 +63,8 @@ class SpikePit:
             SpikePit.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, width, height)
 
 
-        l, b, r, t = self.get_bb()
-        draw_rectangle(l - camera_x, b - camera_y, r - camera_x, t - camera_y)
+        # l, b, r, t = self.get_bb()
+        # draw_rectangle(l - camera_x, b - camera_y, r - camera_x, t - camera_y)
 
     def get_bb(self):
         half_w = (self.hit_w * self.scale) / 2
