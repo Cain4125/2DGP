@@ -5,15 +5,17 @@ import game_framework
 import camera
 from start_map import StartMap
 from battle_stage import BattleStage
+from ui import UI
 
 skull_player = None
 stages = {}
 current_stage = None
+ui = None
 WORLD_WIDTH_PIXELS = 5000
 WORLD_HEIGHT_PIXELS = 800
 
 def enter():
-    global skull_player, stages, current_stage
+    global skull_player, stages, current_stage, ui
     skull_player = Skull(platforms=[], world_w=WORLD_WIDTH_PIXELS)
     camera.camera.set_target_and_world(skull_player, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
     stages = {
@@ -23,10 +25,13 @@ def enter():
     current_stage = stages['start_map']
     current_stage.enter()
 
+    ui = UI(skull_player)
+
 def finish():
     global skull_player
     game_world.clear()
     del skull_player
+    del ui
     stages.clear()
     camera.camera.init()
 
@@ -49,10 +54,12 @@ def update():
         current_stage.enter()
     game_world.update()
     camera.camera.update()
+    ui.update()
 
 def draw():
     clear_canvas()
     game_world.render()
+    ui.draw(camera.camera.x, camera.camera.y)
     update_canvas()
 
 def pause():

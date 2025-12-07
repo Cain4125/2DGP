@@ -169,7 +169,7 @@ class StartMap:
         for z in self.spikes:
             game_world.add_object(z, 1)
         for text in self.tutorial_texts:
-            game_world.add_object(text, 2)
+            game_world.add_object(text, 1)
 
         self.skull.platforms = self.platforms
 
