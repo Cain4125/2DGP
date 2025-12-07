@@ -450,7 +450,7 @@ class SkillSpin:
         self.frame_count = 7
         self.fps = 15.0
 
-        self.velocity = RUN_SPEED_PPS * 1.0
+        self.velocity = RUN_SPEED_PPS * 1.3
 
         self.duration = 2.0
         self.timer = 0.0
