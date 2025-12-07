@@ -1,5 +1,5 @@
 from pico2d import load_image, get_time, draw_rectangle, clamp
-from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_DOWN, SDLK_a, SDLK_z, SDLK_x
+from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_DOWN, SDLK_a, SDLK_s, SDLK_z, SDLK_x
 
 
 import game_world
@@ -18,6 +18,8 @@ def space_down(e):
 def a_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
 
+def s_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_s
 
 def right_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
@@ -434,6 +436,96 @@ class JumpAttack:
         return False
 
 
+class SkillSpin:
+    image = None
+
+    def __init__(self, skull):
+        self.skull = skull
+        if SkillSpin.image is None:
+            SpinImage = load_image('skul_spin.png')
+            SkillSpin.image = SpinImage
+
+        self.frame_w = 66
+        self.frame_h = 54
+        self.frame_count = 7
+        self.fps = 15.0
+
+        self.velocity = RUN_SPEED_PPS * 1.0
+
+        self.duration = 2.0
+        self.timer = 0.0
+
+        self.hit_interval = 0.3
+        self.hit_timer = 0.0
+        self.hit_enemies = []
+
+    def enter(self, e):
+        self.timer = 1.7
+        self.hit_timer = 0.0
+        self.hit_enemies.clear()
+
+        self.skull.skill_s_cooldown = 9.0
+
+        self.skull.dir = self.skull.face_dir
+        self.skull.vy = 0
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.skull.x += self.skull.face_dir * self.velocity * game_framework.frame_time
+
+        self.skull.f_frame = (self.skull.f_frame + self.fps * game_framework.frame_time) % self.frame_count
+        self.skull.frame = int(self.skull.f_frame)
+
+        self.timer -= game_framework.frame_time
+        if self.timer <= 0:
+            self.skull.state_machine.cur_state.exit(('TIME_OUT', None))
+            self.skull.recompute_dir()
+            if self.skull.left_pressed or self.skull.right_pressed:
+                next_state = self.skull.RUN
+            else:
+                next_state = self.skull.IDLE
+            self.skull.state_machine.cur_state = next_state
+            next_state.enter(('TIME_OUT', None))
+            return
+
+        self.hit_timer += game_framework.frame_time
+        if self.hit_timer >= self.hit_interval:
+            self.hit_timer = 0.0
+            self.hit_enemies.clear()
+
+
+        attack_bb = self.get_attack_bb()
+        for o in game_world.all_objects():
+            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree'):
+                if id(o) in self.hit_enemies: continue
+
+                if collide(attack_bb, o.get_bb()):
+                    o.take_damage(5, self.skull.face_dir)
+                    self.hit_enemies.append(id(o))
+
+    def draw(self, cx, cy):
+        sx = self.frame_w * self.skull.frame
+        screen_x = self.skull.x - cx
+        screen_y = self.skull.y - cy
+
+        w = self.frame_w * SCALE
+        h = self.frame_h * SCALE
+
+        if self.skull.face_dir == 1:
+            SkillSpin.image.clip_draw(sx, 0, self.frame_w, self.frame_h, screen_x, screen_y, w, h)
+        else:
+            SkillSpin.image.clip_composite_draw(sx, 0, self.frame_w, self.frame_h, 0, 'h', screen_x, screen_y, w, h)
+
+    def get_attack_bb(self):
+        w = self.frame_w * SCALE
+        h = self.frame_h * SCALE
+        return self.skull.x - w / 2, self.skull.y - h / 2, self.skull.x + w / 2, self.skull.y + h / 2
+
+    def handle_event(self, e):
+        return False
+
 class Skull:
     def __init__(self, platforms, world_w=1400):
         self.x, self.y = 400, GROUND_Y
@@ -454,10 +546,10 @@ class Skull:
         self.world_w = world_w
         self.jump_count = 0
 
-        # 무적 시간
         self.invincible_timer = 0.0
 
         self.skill_cooldown = 0.0
+        self.skill_s_cooldown = 0.0
 
         self.IDLE = Idle(self)
         self.RUN = Run(self)
@@ -470,26 +562,31 @@ class Skull:
         self.current_hp = SKULL_MAX_HP
         self.hp_bar_image = load_image('hp.png')
         self.down_pressed = False
+        self.SKILL_SPIN = SkillSpin(self)
 
         def z_down_with_cooldown(e):
             is_z = z_down(e)
             cooldown_ready = (get_time() - self.last_dash_time > DASH_COOLDOWN_SEC)
             return is_z and cooldown_ready
 
+        def s_down_ready(e):
+            return s_down(e) and self.skill_s_cooldown <= 0
+
         self.state_machine = StateMachine(
             self.IDLE,
             {
                 self.IDLE: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
                             right_down: self.RUN, left_down: self.RUN, right_up: self.IDLE, left_up: self.IDLE,
-                            a_down: self.IDLE},
+                            a_down: self.IDLE, s_down_ready: self.SKILL_SPIN},
                 self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
                            right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN,
-                           a_down: self.RUN},
+                           a_down: self.RUN, s_down_ready: self.SKILL_SPIN},
                 self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK, a_down: self.JUMP},
                 self.DASH: {},
                 self.ATTACK1: {},
                 self.ATTACK2: {},
-                self.JUMP_ATTACK: {space_down: self.JUMP, z_down_with_cooldown: self.DASH}
+                self.JUMP_ATTACK: {space_down: self.JUMP, z_down_with_cooldown: self.DASH},
+                self.SKILL_SPIN: {}
             }
         )
 
@@ -559,6 +656,10 @@ class Skull:
             self.skill_cooldown -= game_framework.frame_time
             if self.skill_cooldown < 0:
                 self.skill_cooldown = 0
+        if self.skill_s_cooldown > 0:
+            self.skill_s_cooldown -= game_framework.frame_time
+            if self.skill_s_cooldown < 0:
+                self.skill_s_cooldown = 0
         # 무적
         if self.invincible_timer > 0.0:
             self.invincible_timer -= game_framework.frame_time
