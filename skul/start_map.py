@@ -84,25 +84,43 @@ class FixedBackground:
 
 
 class Portal:
-    image = None
+    image_close = None
+    image_open = None
 
     def __init__(self, x, y):
-        if Portal.image is None:
-            Portal.image = load_image('portal.png')
+        if Portal.image_close is None:
+            Portal.image_close = load_image('Portal_closed.png')
+        if Portal.image_open is None:
+            Portal.image_open = load_image('Portal_opened.png')
         self.x, self.y = x, y
         self.w, self.h = 176, 128
-        self.half_w = self.w * SCALE / 2.5
-        self.half_h = self.h * SCALE / 2.5
+        self.scale = SCALE
+
+        self.active = False
+        self.frame = 0
+        self.f_frame = 0.0
+        self.fps = 10.0
+        self.frame_count = 7
+
+    def update(self):
+        if self.active:
+            self.f_frame = (self.f_frame + self.fps * game_framework.frame_time) % self.frame_count
+            self.frame = int(self.f_frame)
 
     def draw(self, camera_x, camera_y):
         screen_x = self.x - camera_x
         screen_y = self.y - camera_y
-        self.image.draw(screen_x, screen_y, self.w * SCALE, self.h * SCALE)
-        #draw_rectangle(self.x - self.half_w - camera_x, self.y - self.half_h - camera_y,
-                     #  self.x + self.half_w - camera_x, self.y + self.half_h - camera_y)
+        width = self.w * self.scale
+        height = self.h * self.scale
 
-    def update(self):
-        pass
+        if self.active:
+            sx = self.frame * self.w
+            self.image_open.clip_draw(sx, 0, self.w, self.h, screen_x, screen_y, width, height)
+        else:
+            self.image_close.draw(screen_x, screen_y, width, height)
+
+    def activate(self):
+        self.active = True
 
 
 
@@ -119,6 +137,7 @@ class StartMap:
         self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
                         ]
         self.tree = [EnemyGreenTree(1600, 100, self.skull, self.platforms),]
+        self.enemies = self.knights + self.tree
         self.trees = [
             Decoration(200, 'Tree02.png'),
             #Decoration(900, 'Tree01.png'),
@@ -182,11 +201,19 @@ class StartMap:
         pass
 
     def update(self):
-        portal_proximity_x = abs(self.skull.x - self.portal.x) < 50
+        all_enemies_dead = True
+        for e in self.knights:
+            if e.alive:
+                all_enemies_dead = False
+                break
 
+        if all_enemies_dead:
+            self.portal.activate()
+
+        portal_proximity_x = abs(self.skull.x - self.portal.x) < 50
         is_up_pressed = self.skull.up_pressed
 
-        if portal_proximity_x and is_up_pressed:
+        if portal_proximity_x and is_up_pressed and self.portal.active:
             return 'battle_stage'
 
         return None
