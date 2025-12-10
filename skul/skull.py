@@ -727,7 +727,7 @@ class Skull:
             self.state_machine.handle_state_event(event_tuple)
 
     def draw(self, camera_x, camera_y):
-        if self.invincible_timer > 0.0:
+        if self.invincible_timer > 0.0 and self.state_machine.cur_state != self.DASH:
             if int(self.invincible_timer * 10) % 2 == 0:
                 pass
             else:
@@ -737,6 +737,7 @@ class Skull:
 
         lx, by, rx, ty = self.get_attack_bb()
         #draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
+
 
     def fire_ball(self):
         if self.skill_cooldown > 0:
