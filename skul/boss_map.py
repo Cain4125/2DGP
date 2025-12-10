@@ -98,7 +98,7 @@ class BossStage:
 
     def update(self):
         self.spawn_timer += game_framework.frame_time
-        if self.spawn_timer >= 20.0:
+        if self.spawn_timer >= 15.0:
             self.spawn_wave()
             self.spawn_timer = 0.0
 
