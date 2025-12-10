@@ -438,7 +438,7 @@ class EnemyTree:
 
         if self.current_hp <= 0:
             self.alive = False
-            if random.randint(1, 100) <= 50:
+            if random.randint(1, 100) <= 10:
                 orb = HealOrb(self.x, self.y, self.target)
                 game_world.add_object(orb, 1)
 
