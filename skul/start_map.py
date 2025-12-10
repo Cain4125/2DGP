@@ -176,6 +176,8 @@ class StartMap:
     def enter(self):
         game_world.clear()
 
+        self.skull.world_w = WORLD_WIDTH_PIXELS
+
         game_world.add_object(self.bg, 0)
 
         for tree in self.trees:
