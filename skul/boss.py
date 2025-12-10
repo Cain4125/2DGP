@@ -27,7 +27,7 @@ class BossDebris:
         self.idx = random.randint(1, 12)
         key = f'part_{self.idx}'
         if key not in BossDebris.images:
-            BossDebris.images[key] = load_image(f'boss_dead_parts{self.idx:02d}.png')
+            BossDebris.images[key] = load_image(f'boss_dead_part{self.idx:02d}.png')
         self.image = BossDebris.images[key]
 
         self.vx = random.uniform(-200, 200)
@@ -102,7 +102,7 @@ class BossStamp:
         self.frame = 0
         self.f_frame = 0.0
         self.fps = 40
-        self.total_frames = 10
+        self.total_frames = 22
 
         self.w = 277 * SCALE * STAMP_SCALE_FACTOR
         self.h = 68 * SCALE * STAMP_SCALE_FACTOR
@@ -240,7 +240,7 @@ class BossRange:
         self.phase = 0
         self.timer = 0.0
 
-    def enter(self):
+    def enter(self, e=None):
         self.boss.f_frame = 0.0
         self.boss.frame = 0
         self.phase = 0
@@ -352,10 +352,6 @@ class EnemyGiantTree:
         self.check_collision_with_balls()
 
     def draw(self, cx, cy):
-        if self.invincible_timer > 0:
-            if int(self.invincible_timer * 10) % 2 == 0:
-                return
-
         self.cur_state.draw(cx, cy)
 
     def change_state(self, state):
