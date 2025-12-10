@@ -17,14 +17,19 @@ class Camera:
         self.world_height = h
         if self.target:
             self.x = clamp(0, int(self.target.x) - self.canvas_width // 2, self.world_width - self.canvas_width)
+            self.y = clamp(0, int(self.target.y) - self.canvas_height // 2, self.world_height - self.canvas_height)
 
     def update(self):
         if not self.target:
             return
+
         target_center_x = int(self.target.x)
         new_x = target_center_x - (self.canvas_width // 2)
         self.x = clamp(0, new_x, self.world_width - self.canvas_width)
-        self.y = 0
+
+        target_center_y = int(self.target.y)
+        new_y = target_center_y - (self.canvas_height // 2)
+        self.y = clamp(0, new_y, self.world_height - self.canvas_height)
 
     def init(self):
         self.x = 0
