@@ -1,5 +1,6 @@
 from pico2d import load_image, draw_rectangle
 import game_framework
+import game_world
 from constants import SCALE
 
 
@@ -22,7 +23,7 @@ class SpikePit:
 
         self.x, self.y = x, y
         self.target = target
-        self.is_ceiling = is_ceiling  # 천장 설치 여부
+        self.is_ceiling = is_ceiling
 
         self.image_w = 1408
         self.image_h = 96
@@ -41,12 +42,31 @@ class SpikePit:
         self.hit_h = self.cell_h * 0.5
 
     def update(self):
+        # [애니메이션 업데이트]
         self.f_frame = (self.f_frame + self.fps * game_framework.frame_time) % self.frame_count
         self.frame = int(self.f_frame)
 
-        if self.target:
-            if collide(self.get_bb(), self.target.get_bb()):
-                self.target.take_damage(self.damage, self.x)
+        # [충돌 및 데미지 로직]
+        for o in game_world.all_objects():
+            if self.is_damageable(o):
+                if collide(self.get_bb(), o.get_bb()):
+
+                    # 1. 플레이어 (Skull)
+                    if type(o).__name__ == 'Skull':
+                        # [수정] 무적 상태가 아닐 때만 넉백과 데미지 적용!
+                        # (무적이면 가시 위를 그냥 걸어다닐 수 있음)
+                        if o.invincible_timer <= 0:
+                            if hasattr(o, 'vy'):
+                                o.vy = 500  # 넉백(위로 튕김)
+                            o.take_damage(self.damage, self.x)
+
+                    # 2. 적 (Enemy...)
+                    elif type(o).__name__.startswith('Enemy'):
+                        o.take_damage(self.damage, 0)
+
+    def is_damageable(self, o):
+        name = type(o).__name__
+        return name == 'Skull' or name.startswith('Enemy')
 
     def draw(self, camera_x, camera_y):
         sx = self.frame * self.cell_w
@@ -62,13 +82,10 @@ class SpikePit:
         else:
             SpikePit.image.clip_draw(sx, 0, self.cell_w, self.cell_h, screen_x, screen_y, width, height)
 
-
-        # l, b, r, t = self.get_bb()
-        # draw_rectangle(l - camera_x, b - camera_y, r - camera_x, t - camera_y)
-
     def get_bb(self):
         half_w = (self.hit_w * self.scale) / 2
-        half_h = (self.hit_h * self.scale) / 3 +10
+        half_h = (self.hit_h * self.scale) / 3 + 10
+
         if self.is_ceiling:
             bb_offset_y = -40
         else:
