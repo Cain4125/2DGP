@@ -17,7 +17,6 @@ def collide(bb_a, bb_b):
     return True
 
 
-
 class Idle:
     image = None
 
@@ -45,7 +44,6 @@ class Idle:
             return
 
         dist_x = self.knight.target.x - self.knight.x
-
         dist_y = abs(self.knight.target.y - self.knight.y)
         is_in_y_range = (dist_y <= 100)
 
@@ -96,6 +94,7 @@ class Run:
     def do(self):
         if not self.knight.target:
             return
+
         dist_x = self.knight.target.x - self.knight.x
 
         if abs(dist_x) < ATTACK_RANGE:
@@ -291,11 +290,8 @@ class EnemyKnight:
 
     class DUMMY_JUMP:
         def enter(self, e): pass
-
         def exit(self): pass
-
         def do(self): pass
-
         def draw(self, cx, cy): pass
 
     def __init__(self, x, y, target, platforms):
@@ -345,7 +341,6 @@ class EnemyKnight:
     def change_state(self, new, e):
         if self.cur_state == new and self.cur_state != self.HIT:
             return
-
         self.cur_state.exit()
         self.cur_state = new
         self.cur_state.enter(e)
@@ -355,6 +350,9 @@ class EnemyKnight:
                 self.y - self.half_hit_h,
                 self.x + self.half_hit_w,
                 self.y + self.half_hit_h)
+
+    def get_bb_body(self):
+        return self.get_bb()
 
     def get_bb_feet(self):
         return (self.x - self.half_hit_w,
@@ -392,24 +390,31 @@ class EnemyKnight:
         self.on_ground = False
         feet = self.get_bb_feet()
 
-        if self.vy <= 0:
-            for p in self.platforms:
-                b = p.get_bb()
-                if feet[2] < b[0]: continue
-                if feet[0] > b[2]: continue
-                if feet[3] < b[1]: continue
-                if feet[1] > b[3]: continue
+        if not self.platforms:
+            return
 
-                if feet[1] < b[3] - 15:
-                    continue
+        left_a, bottom_a, right_a, top_a = feet
 
+        for p in self.platforms:
+            b = p.get_bb()
+            left_b, bottom_b, right_b, top_b = b
+
+            if left_a > right_b: continue
+            if right_a < left_b: continue
+            if top_a < bottom_b: continue
+            if bottom_a > top_b: continue
+
+            if bottom_a < top_b - 15:
+                continue
+
+            if self.vy <= 0:
                 self.on_ground = True
                 self.vy = 0
-                self.y = b[3] + self.half_hit_h
+                self.y = top_b + self.half_hit_h
                 return
 
     def check_wall_collision(self):
-        my_body = self.get_bb()
+        my_body = self.get_bb_body()
         if not self.platforms:
             return
 
@@ -417,18 +422,18 @@ class EnemyKnight:
             if not getattr(p, 'is_main', False):
                 continue
 
-            b = p.get_bb()
+            platform_bb = p.get_bb()
 
-            if my_body[0] > b[2]: continue
-            if my_body[2] < b[0]: continue
-            if my_body[3] < b[1]: continue
-            if my_body[1] > b[3]: continue
+            if my_body[0] > platform_bb[2]: continue
+            if my_body[2] < platform_bb[0]: continue
+            if my_body[3] < platform_bb[1]: continue
+            if my_body[1] > platform_bb[3]: continue
 
-            if self.y < b[3] + self.half_hit_h - 5:
-                if self.x < p.x:
-                    self.x = b[0] - self.half_hit_w
-                elif self.x > p.x:
-                    self.x = b[2] + self.half_hit_w
+            if self.y < platform_bb[3] + self.half_hit_h - 5:
+                if self.x < p.x and self.dir > 0:
+                    self.x = platform_bb[0] - self.half_hit_w
+                elif self.x > p.x and self.dir < 0:
+                    self.x = platform_bb[2] + self.half_hit_w
 
     def take_damage(self, damage_amount, attacker_face_dir):
         if not self.alive:
@@ -455,7 +460,6 @@ class EnemyKnight:
                 6.0
             )
             game_world.add_object(dead_knight_body, 0)
-
 
         if self.alive:
             self.change_state(self.HIT, attacker_face_dir)
@@ -489,17 +493,13 @@ class EnemyKnight:
             return
         self.cur_state.draw(cx, cy)
         lx, by, rx, ty = self.get_bb()
-        # draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
 
         if self.cur_state == self.ATTACK:
             lx, by, rx, ty = self.get_attack_bb()
-            # draw_rectangle(lx - cx, by - cy, rx - cx, ty - cy)
 
 
 class DeadEnemy:
-
     def __init__(self, x, y, image_name, sprite_w, sprite_h, duration=3.0):
-
         self.image = load_image(image_name)
         self.x, self.y = x, y
         self.sprite_w = sprite_w

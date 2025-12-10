@@ -63,7 +63,7 @@ class BossStage:
     def spawn_wave(self):
         for target_platform in [self.platform_L2, self.platform_R2]:
             gt_x = target_platform.x
-            gt_y = target_platform.y + 60
+            gt_y = target_platform.y + 100
             green_tree = EnemyGreenTree(gt_x, gt_y, self.skull, self.platforms)
             game_world.add_object(green_tree, 1)
 

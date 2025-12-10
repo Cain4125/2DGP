@@ -290,13 +290,11 @@ class TreeHit:
 
 class EnemyTree:
     sound = None
+
     class DUMMY_JUMP:
         def enter(self, e): pass
-
         def exit(self): pass
-
         def do(self): pass
-
         def draw(self, cx, cy): pass
 
     def __init__(self, x, y, target, platforms):
@@ -359,6 +357,9 @@ class EnemyTree:
                 self.x + self.half_hit_w,
                 self.y + self.half_hit_h)
 
+    def get_bb_body(self):
+        return self.get_bb()
+
     def get_bb_feet(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
@@ -392,25 +393,34 @@ class EnemyTree:
     def check_ground(self):
         self.on_ground = False
         feet = self.get_bb_feet()
+
+        if not self.platforms:
+            return
+
+        left_a, bottom_a, right_a, top_a = feet
+
         for p in self.platforms:
             if not isinstance(p, Ground):
                 continue
             b = p.get_bb()
-            if feet[2] < b[0]: continue
-            if feet[0] > b[2]: continue
-            if feet[3] < b[1]: continue
-            if feet[1] > b[3]: continue
+            left_b, bottom_b, right_b, top_b = b
 
-            if feet[1] < b[3] - 15: continue
+            if left_a > right_b: continue
+            if right_a < left_b: continue
+            if top_a < bottom_b: continue
+            if bottom_a > top_b: continue
+
+            if bottom_a < top_b - 15:
+                continue
 
             if self.vy <= 0:
                 self.on_ground = True
                 self.vy = 0
-                self.y = b[3] + self.half_hit_h
+                self.y = top_b + self.half_hit_h
                 return
 
     def check_wall_collision(self):
-        my_body = self.get_bb()
+        my_body = self.get_bb_body()
         if not self.platforms:
             return
 
@@ -426,9 +436,9 @@ class EnemyTree:
             if my_body[1] > b[3]: continue
 
             if self.y < b[3] + self.half_hit_h - 5:
-                if self.x < p.x:
+                if self.x < p.x and self.dir > 0:
                     self.x = b[0] - self.half_hit_w
-                elif self.x > p.x:
+                elif self.x > p.x and self.dir < 0:
                     self.x = b[2] + self.half_hit_w
 
     def take_damage(self, damage_amount, attacker_face_dir):
@@ -492,7 +502,6 @@ class EnemyTree:
 
 
 class DeadTree:
-
     def __init__(self, x, y, image_name, sprite_w, sprite_h, duration=3.0):
         self.image = load_image(image_name)
         self.x, self.y = x, y

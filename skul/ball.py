@@ -1,6 +1,7 @@
-from pico2d import *
+from pico2d import load_image, load_wav
 import game_world
 import camera
+
 
 def collide(bb_a, bb_b):
     left_a, bottom_a, right_a, top_a = bb_a
@@ -11,13 +12,19 @@ def collide(bb_a, bb_b):
     if bottom_a > top_b: return False
     return True
 
+
 # python
 class Ball:
     image = None
+    sound = None
 
-    def __init__(self, x, y, velocity, world_w, scale=3, speed_scale=0.5, damage = 10):
+    def __init__(self, x, y, velocity, world_w, scale=3, speed_scale=0.5, damage=10):
         if Ball.image is None:
             Ball.image = load_image('Skul_Skill.png')
+        if Ball.sound is None:
+            Ball.sound = load_wav('attack1.wav')
+            Ball.sound.set_volume(40)
+
         self.x = x
         self.y = y
         self.velocity = velocity
@@ -29,7 +36,6 @@ class Ball:
         self.damage = damage
 
     def get_bb(self):
-        # 충돌 박스 크기
         half_w = self.draw_w / 2
         half_h = self.draw_h / 2
         return self.x - half_w, self.y - half_h, self.x + half_w, self.y + half_h
@@ -38,8 +44,6 @@ class Ball:
         screen_x = self.x - camera_x
         screen_y = self.y - camera_y
         self.image.draw(screen_x, screen_y, self.draw_w, self.draw_h)
-
-
 
     def update(self):
         self.x += self.velocity * self.speed_scale
@@ -51,6 +55,9 @@ class Ball:
         for o in game_world.all_objects():
             if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree', 'EnemyGiantTree'):
                 if collide(self.get_bb(), o.get_bb()):
+                    if Ball.sound:
+                        Ball.sound.play()
+
                     knockback_dir = 1 if self.velocity > 0 else -1
                     o.take_damage(self.damage, knockback_dir)
                     game_world.remove_object(self)

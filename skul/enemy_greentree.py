@@ -16,6 +16,7 @@ def collide(bb_a, bb_b):
     if bottom_a > top_b: return False
     return True
 
+
 class GreenTreeIdle:
     image = None
 
@@ -370,11 +371,16 @@ class EnemyGreenTree:
 
     def check_wall_collision(self):
         my_body = self.get_bb()
-        if not self.platforms: return
+        if not self.platforms:
+            return
         for p in self.platforms:
-            if not getattr(p, 'is_main', False): continue
+            if not getattr(p, 'is_main', False):
+                continue
             b = p.get_bb()
-            if my_body[0] > b[2] or my_body[2] < b[0] or my_body[3] < b[1] or my_body[1] > b[3]: continue
+            if my_body[0] > b[2]: continue
+            if my_body[2] < b[0]: continue
+            if my_body[3] < b[1]: continue
+            if my_body[1] > b[3]: continue
 
             if self.y < b[3] + self.half_hit_h - 5:
                 if self.x < p.x:
@@ -385,16 +391,20 @@ class EnemyGreenTree:
     def check_ground(self):
         self.on_ground = False
         feet = self.get_bb_feet()
-        for p in self.platforms:
-            b = p.get_bb()
-            if feet[2] < b[0]: continue
-            if feet[0] > b[2]: continue
-            if feet[3] < b[1]: continue
-            if feet[1] > b[3]: continue
 
-            if feet[1] < b[3] - 35: continue
+        if self.vy <= 0:
+            for p in self.platforms:
+                if not isinstance(p, Ground):
+                    continue
+                b = p.get_bb()
+                if feet[2] < b[0]: continue
+                if feet[0] > b[2]: continue
+                if feet[3] < b[1]: continue
+                if feet[1] > b[3]: continue
 
-            if self.vy <= 0:
+                if feet[1] < b[3] - 15:
+                    continue
+
                 self.on_ground = True
                 self.vy = 0
                 self.y = b[3] + self.half_hit_h
