@@ -342,7 +342,7 @@ class EnemyGreenTree:
         self.attack_cooldown = 2.0
         self.knockback_dir = 0
 
-        self.max_hp = ENEMY_TREE_MAX_HP
+        self.max_hp = ENEMY_GREEN_TREE_MAX_HP
         self.current_hp = self.max_hp
         self.alive = True
 

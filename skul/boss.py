@@ -343,7 +343,7 @@ class EnemyGiantTree:
     def __init__(self, x, y, target):
         self.x, self.y = x, y
         self.target = target
-        self.max_hp = 10
+        self.max_hp = 500
         self.current_hp = self.max_hp
         self.alive = True
 
