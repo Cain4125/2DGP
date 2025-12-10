@@ -4,6 +4,7 @@ from ground import Ground
 import camera
 import game_framework
 from constants import SCALE
+from boss import EnemyGiantTree
 
 WORLD_WIDTH_PIXELS = 1500
 WORLD_HEIGHT_PIXELS = 800
@@ -46,11 +47,14 @@ class BossStage:
             self.platform_R2, self.platform_R1
         ]
 
+        self.boss = EnemyGiantTree(750, 250, self.skull)
+
         self.bg = FixedBackground()
 
     def enter(self):
         game_world.clear()
         game_world.add_object(self.bg, 0)
+        game_world.add_object(self.boss, 1)
         game_world.add_object(self.skull, 2)
 
         for p in self.platforms:
