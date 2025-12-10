@@ -100,6 +100,9 @@ class TreeRun:
         dist_x = self.tree.target.x - self.tree.x
         dist_y = abs(self.tree.target.y - self.tree.y)
 
+        # [수정] 벽 충돌로 이동이 불가능한지 체크할 수도 있으나,
+        # 여기서는 단순히 타겟을 향해 이동만 시도하고, 실제 이동 제한은 update()의 check_wall_collision에서 처리
+
         if abs(dist_x) < ATTACK_RANGE:
             if self.tree.attack_cooldown <= 0:
                 self.tree.change_state(self.tree.ATTACK, None)
@@ -167,10 +170,10 @@ class TreeAttack:
             return
 
         if not self.played_once:
-            self.tree.x += self.tree.dir * (ENEMY_ATTACK_FPS-1.5) * game_framework.frame_time
+            self.tree.x += self.tree.dir * (ENEMY_ATTACK_FPS - 1.5) * game_framework.frame_time
 
             frame_before = int(self.tree.f_frame)
-            self.tree.f_frame += (ENEMY_ATTACK_FPS - 1.5)* game_framework.frame_time
+            self.tree.f_frame += (ENEMY_ATTACK_FPS - 1.5) * game_framework.frame_time
             frame_after = int(self.tree.f_frame)
 
             if not self.hit_checked and frame_after >= 2 and frame_before < 2:
@@ -342,12 +345,14 @@ class EnemyTree:
         self.cur_state = new
         self.cur_state.enter(e)
 
+    # [수정] 몸통 박스 (벽 충돌용)
     def get_bb(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
                 self.x + self.half_hit_w,
                 self.y + self.half_hit_h)
 
+    # [수정] 발 박스 (착지용)
     def get_bb_feet(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
@@ -369,8 +374,6 @@ class EnemyTree:
                 center_y + attack_height / 2)
 
     def check_attack_collision(self):
-        from skull import Skull
-
         if not self.target:
             return
 
@@ -391,11 +394,40 @@ class EnemyTree:
             if feet[0] > b[2]: continue
             if feet[3] < b[1]: continue
             if feet[1] > b[3]: continue
+
+            # [수정] 벽타기 방지
+            if feet[1] < b[3] - 15: continue
+
             if self.vy <= 0:
                 self.on_ground = True
                 self.vy = 0
                 self.y = b[3] + self.half_hit_h
                 return
+
+    # [추가] 벽 충돌 체크
+    def check_wall_collision(self):
+        my_body = self.get_bb()
+        if not self.platforms:
+            return
+
+        for p in self.platforms:
+            # 메인 바닥만 벽으로 취급
+            if not getattr(p, 'is_main', False):
+                continue
+
+            b = p.get_bb()
+
+            if my_body[0] > b[2]: continue
+            if my_body[2] < b[0]: continue
+            if my_body[3] < b[1]: continue
+            if my_body[1] > b[3]: continue
+
+            # 내 발이 발판 윗면보다 아래에 있다면 (벽 충돌)
+            if self.y < b[3] + self.half_hit_h - 5:
+                if self.x < p.x:
+                    self.x = b[0] - self.half_hit_w
+                elif self.x > p.x:
+                    self.x = b[2] + self.half_hit_w
 
     def take_damage(self, damage_amount, attacker_face_dir):
         if not self.alive:
@@ -430,14 +462,19 @@ class EnemyTree:
         if self.cur_state not in (self.ATTACK, self.HIT):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
         self.y += self.vy * game_framework.frame_time
+
+        # [수정] 충돌 체크 순서 및 로직 추가
+        self.check_wall_collision()
         self.check_ground()
+
         self.cur_state.do()
         if not self.on_ground:
-            hard_y = 60 + self.half_hit_h
+            hard_y = -100  # 안전장치
             if self.y < hard_y:
                 self.y = hard_y
                 self.vy = 0
                 self.on_ground = True
+
         if not self.alive:
             game_world.remove_object(self)
             return
