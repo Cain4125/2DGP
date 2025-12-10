@@ -23,14 +23,16 @@ class BossDebris:
     images = {}
 
     def __init__(self, x, y):
-        self.x, self.y = x, y
+        self.x = x
+        self.y = y + random.uniform(0, 80)
+
         self.idx = random.randint(1, 12)
         key = f'part_{self.idx}'
         if key not in BossDebris.images:
             BossDebris.images[key] = load_image(f'boss_dead_part{self.idx:02d}.png')
         self.image = BossDebris.images[key]
 
-        self.vx = random.uniform(-200, 200)
+        self.vx = random.uniform(-500, 500)
         self.vy = random.uniform(200, 600)
         self.angle = random.uniform(0, 360)
         self.rotate_speed = random.uniform(-180, 180)
@@ -47,6 +49,7 @@ class BossDebris:
             self.y = 60
             self.vy *= -0.5
             self.vx *= 0.8
+            self.rotate_speed = 0
 
         if self.timer <= 0:
             game_world.remove_object(self)
@@ -126,7 +129,7 @@ class BossStamp:
 
     def get_bb(self):
         return self.x - self.w / 2 + (10 * SCALE), self.y - self.h / 2, self.x + self.w / 2 - (
-                    10 * SCALE), self.y + self.h / 4
+                10 * SCALE), self.y + self.h / 4
 
 
 class BossIdle:
@@ -297,33 +300,49 @@ class BossRange:
 class BossDead:
     def __init__(self, boss):
         self.boss = boss
-        self.image = load_image('boss_dead.png')
-        self.w, self.h = 75, 51
+        self.image_dead = load_image('boss_dead.png')
+        self.image_dying = load_image('boss_range.png')
+        self.dead_w, self.dead_h = 75, 51
+        self.dying_w, self.dying_h = 134, 115
+
+        self.timer = 0.0
+        self.exploded = False
 
     def enter(self):
-        for _ in range(12):
-            debris = BossDebris(self.boss.x, self.boss.y)
-            game_world.add_object(debris, 1)
+        self.timer = 1.5
+        self.exploded = False
 
     def exit(self):
         pass
 
     def do(self):
-        pass
+        if not self.exploded:
+            self.timer -= game_framework.frame_time
+            if self.timer <= 0:
+                self.exploded = True
+                for _ in range(12):
+                    debris = BossDebris(self.boss.x, self.boss.y)
+                    game_world.add_object(debris, 1)
 
     def draw(self, cx, cy):
-        draw_w = self.w * SCALE * BOSS_SCALE_FACTOR
-        draw_h = self.h * SCALE * BOSS_SCALE_FACTOR
-
-        offset_y = (draw_h / 2) - (114 * SCALE * BOSS_SCALE_FACTOR / 2)
-        self.image.draw(self.boss.x - cx, self.boss.y - cy + offset_y, draw_w, draw_h)
+        if not self.exploded:
+            sx = 3 * self.dying_w
+            draw_w = self.dying_w * SCALE * BOSS_SCALE_FACTOR
+            draw_h = self.dying_h * SCALE * BOSS_SCALE_FACTOR
+            self.image_dying.clip_draw(sx, 0, self.dying_w, self.dying_h, self.boss.x - cx, self.boss.y - cy, draw_w,
+                                       draw_h)
+        else:
+            draw_w = self.dead_w * SCALE * BOSS_SCALE_FACTOR
+            draw_h = self.dead_h * SCALE * BOSS_SCALE_FACTOR
+            offset_y = (draw_h / 2) - (114 * SCALE * BOSS_SCALE_FACTOR / 2)
+            self.image_dead.draw(self.boss.x - cx, self.boss.y - cy + offset_y, draw_w, draw_h)
 
 
 class EnemyGiantTree:
     def __init__(self, x, y, target):
         self.x, self.y = x, y
         self.target = target
-        self.max_hp = 500
+        self.max_hp = 10
         self.current_hp = self.max_hp
         self.alive = True
 
