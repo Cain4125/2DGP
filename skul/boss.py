@@ -32,8 +32,8 @@ class BossDebris:
             BossDebris.images[key] = load_image(f'boss_dead_part{self.idx:02d}.png')
         self.image = BossDebris.images[key]
 
-        self.vx = random.uniform(-500, 500)
-        self.vy = random.uniform(200, 600)
+        self.vx = random.uniform(-800, 800)
+        self.vy = random.uniform(400, 1000)
         self.angle = random.uniform(0, 360)
         self.rotate_speed = random.uniform(-180, 180)
         self.timer = 5.0
@@ -320,7 +320,8 @@ class BossDead:
             self.timer -= game_framework.frame_time
             if self.timer <= 0:
                 self.exploded = True
-                for _ in range(12):
+                # [수정] 12개 -> 24개로 증가 (파편이 더 많이 튐)
+                for _ in range(24):
                     debris = BossDebris(self.boss.x, self.boss.y)
                     game_world.add_object(debris, 1)
 
