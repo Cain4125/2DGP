@@ -68,6 +68,7 @@ class FixedBackground:
     def __init__(self):
         self.image = load_image('sky2.png')
         self.image2 = load_image('mountain.png')
+        self.image3 = load_image('trees.png')
         self.w = WORLD_WIDTH_PIXELS
         self.h = WORLD_HEIGHT_PIXELS
 
@@ -75,6 +76,8 @@ class FixedBackground:
         self.image.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
 
         self.image2.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+
+        self.image3.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
 
     def update(self):
         pass

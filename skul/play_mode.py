@@ -5,6 +5,7 @@ import game_framework
 import camera
 from start_map import StartMap
 from battle_stage import BattleStage
+from boss_map import BossStage
 from ui import UI
 
 skull_player = None
@@ -21,8 +22,9 @@ def enter():
     stages = {
         'start_map': StartMap(skull_player),
         'battle_stage': BattleStage(skull_player),
+        'boss_map': BossStage(skull_player),
     }
-    current_stage = stages['start_map']
+    current_stage = stages['boss_map']
     current_stage.enter()
 
     ui = UI(skull_player)

@@ -1,0 +1,73 @@
+from pico2d import load_image, draw_rectangle, load_font
+import game_world
+from ground import Ground
+import camera
+import game_framework
+from constants import SCALE
+
+WORLD_WIDTH_PIXELS = 1500
+WORLD_HEIGHT_PIXELS = 800
+
+
+class FixedBackground:
+    def __init__(self):
+        self.image = load_image('sky.png')
+        self.image2 = load_image('mountain.png')
+        self.image3 = load_image('trees.png')
+        self.w = WORLD_WIDTH_PIXELS
+        self.h = WORLD_HEIGHT_PIXELS
+
+    def draw(self, camera_x, camera_y):
+        self.image.draw(self.w // 2 - camera_x, self.h // 2 - camera_y, self.w, self.h)
+        self.image2.draw(self.w // 2 - camera_x, self.h // 2.5 - camera_y, self.w, self.h)
+        self.image3.draw(self.w // 2 - camera_x, self.h // 6 - camera_y, self.w, self.h)
+
+    def update(self):
+        pass
+
+    def get_bb(self):
+        return 0, 0, 0, 0
+
+
+class BossStage:
+    def __init__(self, skull):
+        self.skull = skull
+        self.ground = Ground(WORLD_WIDTH_PIXELS // 2, 30, WORLD_WIDTH_PIXELS, 60, is_main=True)
+
+        self.platform_L1 = Ground(200, 180, 250, 40)
+        self.platform_L2 = Ground(350, 320, 200, 40)
+
+        self.platform_R2 = Ground(1050, 320, 200, 40)
+        self.platform_R1 = Ground(1400, 180, 250, 40)
+
+        self.platforms = [
+            self.ground,
+            self.platform_L1, self.platform_L2,
+            self.platform_R2, self.platform_R1
+        ]
+
+        self.bg = FixedBackground()
+
+    def enter(self):
+        game_world.clear()
+        game_world.add_object(self.bg, 0)
+        game_world.add_object(self.skull, 2)
+
+        for p in self.platforms:
+            game_world.add_object(p, 0)
+
+        self.skull.platforms = self.platforms
+
+        self.skull.x, self.skull.y = 100, 135
+        self.skull.vy = 0
+
+        camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
+
+    def exit(self):
+        pass
+
+    def update(self):
+        return None
+
+    def handle_events(self, event):
+        self.skull.handle_event(event)
