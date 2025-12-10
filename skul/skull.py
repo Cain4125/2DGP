@@ -593,6 +593,9 @@ class Skull:
     def get_bb_feet(self):
         return self.x - self.half_w, self.y - self.half_h, self.x + self.half_w, self.y - self.half_h + 5
 
+    def get_bb_body(self):
+        return self.x - self.half_w, self.y - self.half_h + 10, self.x + self.half_w, self.y + self.half_h
+
     def check_ground(self):
         self.on_ground = False
 
@@ -617,6 +620,25 @@ class Skull:
                 self.vy = 0
                 self.y = platform_bb[3] + self.half_h
                 return
+
+    def check_wall_collision(self):
+        my_body = self.get_bb_body()
+        if not self.platforms:
+            return
+
+        for p in self.platforms:
+            platform_bb = p.get_bb()
+
+            if my_body[0] > platform_bb[2]: continue
+            if my_body[2] < platform_bb[0]: continue
+            if my_body[3] < platform_bb[1]: continue
+            if my_body[1] > platform_bb[3]: continue
+
+            if self.y < platform_bb[3] + self.half_h - 5:
+                if self.x < p.x and self.dir > 0:
+                    self.x = platform_bb[0] - self.half_w
+                elif self.x > p.x and self.dir < 0:
+                    self.x = platform_bb[2] + self.half_w
 
     def get_attack_bb(self):
         return self.get_bb()
