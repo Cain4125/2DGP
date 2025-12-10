@@ -65,11 +65,11 @@ class BossStage:
             game_world.add_object(green_tree, 1)
 
         k_x = random.randint(100, 1400)
-        knight = EnemyKnight(k_x, 100, self.skull, self.platforms)
+        knight = EnemyKnight(k_x, 200, self.skull, self.platforms)
         game_world.add_object(knight, 1)
 
         t_x = random.randint(100, 1400)
-        tree = EnemyTree(t_x, 90, self.skull, self.platforms)
+        tree = EnemyTree(t_x, 200, self.skull, self.platforms)
         game_world.add_object(tree, 1)
 
     def enter(self):

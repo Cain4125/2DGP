@@ -4,6 +4,7 @@ import game_framework
 from constants import SCALE, GRAVITY_PPS
 import math
 import random
+import ending_mode
 
 BOSS_SCALE_FACTOR = 1.3
 STAMP_SCALE_FACTOR = 0.6
@@ -307,10 +308,12 @@ class BossDead:
 
         self.timer = 0.0
         self.exploded = False
+        self.ending_timer = 4.0
 
     def enter(self):
         self.timer = 1.5
         self.exploded = False
+        self.ending_timer = 4.0
 
     def exit(self):
         pass
@@ -324,6 +327,10 @@ class BossDead:
                 for _ in range(24):
                     debris = BossDebris(self.boss.x, self.boss.y)
                     game_world.add_object(debris, 1)
+
+        self.ending_timer -= game_framework.frame_time
+        if self.ending_timer <= 0:
+            game_framework.change_mode(ending_mode.EndingMode('CLEAR'))
 
     def draw(self, cx, cy):
         if not self.exploded:

@@ -20,7 +20,7 @@ class TutorialText:
         self.text = text
         self.color = color
         try:
-            self.font = load_font('Cafe24PROUP.ttf', size)
+                self.font = load_font('Cafe24PROUP.ttf', size)
         except:
             print("폰트 파일을 찾을 수 없습니다.")
 
