@@ -1,7 +1,6 @@
 from pico2d import load_image, get_events, clear_canvas, update_canvas, load_font, load_music
 from sdl2 import SDL_QUIT, SDL_KEYDOWN, SDLK_ESCAPE, SDL_MOUSEBUTTONDOWN
 import game_framework
-import play_mode
 
 
 class EndingMode:
@@ -85,6 +84,8 @@ class EndingMode:
 
                 if (self.btn_restart_rect[0] <= x <= self.btn_restart_rect[2] and
                         self.btn_restart_rect[1] <= y <= self.btn_restart_rect[3]):
+                    # import play_mode lazily to avoid circular import
+                    import play_mode
                     game_framework.change_mode(play_mode)
 
                 elif (self.btn_exit_rect[0] <= x <= self.btn_exit_rect[2] and

@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time, draw_rectangle, clamp, load_wav
+from pico2d import load_image, get_time, clamp, load_wav
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_DOWN, SDLK_a, SDLK_s, SDLK_z, SDLK_x
 
 import game_world
@@ -6,10 +6,6 @@ import game_framework
 from state_machine import StateMachine
 from ball import Ball
 from constants import *
-from enemy_knight import EnemyKnight
-import lobby_mode
-import play_mode
-import ending_mode
 
 
 def space_down(e):
@@ -713,6 +709,8 @@ class Skull:
 
         if self.current_hp <= 0:
             self.current_hp = 0
+            # ending_mode를 지연 import하여 순환 import 방지
+            import ending_mode
             game_framework.change_mode(ending_mode.EndingMode('FAIL'))
             return
 
