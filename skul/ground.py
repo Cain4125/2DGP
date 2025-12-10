@@ -68,5 +68,9 @@ class Ground:
         pass
 
     def get_bb(self):
-        return (self.x - self.half_w, self.y - self.half_h,
-                self.x + self.half_w, self.y + self.half_h)
+        if self.is_main:
+            return (self.x - self.half_w, -1000,
+                    self.x + self.half_w, self.y + self.half_h)
+        else:
+            return (self.x - self.half_w, self.y - self.half_h,
+                    self.x + self.half_w, self.y + self.half_h)
