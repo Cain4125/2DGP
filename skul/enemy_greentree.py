@@ -25,7 +25,6 @@ class GreenTreeIdle:
         if GreenTreeIdle.image is None:
             GreenTreeIdle.image = load_image('greentree_idle.png')
 
-        # [수정] 300 / 5 = 60
         self.cell_w = 60
         self.cell_h = 66
 
@@ -33,8 +32,6 @@ class GreenTreeIdle:
         self.tree.f_frame = 0.0
         self.tree.frame = 0
         self.tree.dir = 0
-
-        # 상태 변경 시 스프라이트 크기 정보 업데이트 (드로잉 보정용)
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
 
@@ -92,13 +89,12 @@ class Spike:
         if Spike.image_thorn is None:
             Spike.image_thorn = load_image('greentree_thorn.png')
 
-
         self.state = 'WARN'
         self.timer = 0.0
 
         self.warn_w = 127
         self.warn_h = 30
-        self.warn_duration = 1.0
+        self.warn_duration = 0.7
 
         self.thorn_frame_count = 8
         self.thorn_w = 125
@@ -159,6 +155,7 @@ class Spike:
             self.target.take_damage(self.damage, self.x)
             self.hit_player = True
 
+
 class GreenTreeAttack:
     image = None
 
@@ -167,75 +164,64 @@ class GreenTreeAttack:
         if GreenTreeAttack.image is None:
             GreenTreeAttack.image = load_image('greentree_attack.png')
 
-
         self.cell_w = 82
         self.cell_h = 68
 
         self.wait_time = 0.0
         self.wait_done = False
-
-        self.played_once = False
-        self.hold = 0.0
-
-        self.wait_time = 1.0
-        self.wait_done = False
-
         self.spike_spawned = False
-
         self.current_spike = None
+        self.finish_timer = 0.0
 
     def enter(self, e):
         self.tree.f_frame = 0.0
         self.tree.frame = 0
-        self.played_once = False
         self.tree.dir = self.tree.face_dir
-        self.hold = 0.8
 
         self.wait_time = 0.7
         self.wait_done = False
         self.spike_spawned = False
         self.current_spike = None
+        self.finish_timer = 0.4
 
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
 
-
     def exit(self):
         if self.current_spike and self.current_spike.state == 'WARN':
             game_world.remove_object(self.current_spike)
-        elif self.wait_done:
-            self.tree.attack_cooldown = 4.0
+
+        self.tree.attack_cooldown = 4.0
 
     def do(self):
-        if not self.played_once:
-            self.tree.f_frame += ENEMY_ATTACK_FPS * game_framework.frame_time
+        if not self.wait_done:
+            if not self.spike_spawned:
+                if self.tree.target:
+                    target_foot_y = self.tree.target.y - (50 * SCALE / 2) - 10
+                    self.current_spike = Spike(self.tree.target.x, target_foot_y, self.tree.target)
+                    game_world.add_object(self.current_spike, 1)
+                self.spike_spawned = True
 
-            if self.tree.f_frame >= 3.0 and not self.wait_done:
-                self.tree.frame = 2
-                self.tree.f_frame = 2.9
-                if not self.spike_spawned:
-                    if self.tree.target:
-                        target_foot_y = self.tree.target.y - (50 * SCALE / 2) -10
-                        self.current_spike = Spike(self.tree.target.x, target_foot_y, self.tree.target)
-                        game_world.add_object(self.current_spike, 1)
+            self.tree.f_frame += (3.0 / 0.7) * game_framework.frame_time
+            if self.tree.f_frame >= 2.0:
+                self.tree.f_frame = 2.0
+            self.tree.frame = int(self.tree.f_frame)
 
-                    self.spike_spawned = True
-                self.wait_time -= game_framework.frame_time
-                if self.wait_time <= 0:
-                    self.wait_done = True
-                    self.tree.f_frame = 3.0
+            self.wait_time -= game_framework.frame_time
+            if self.wait_time <= 0:
+                self.wait_done = True
+                self.tree.f_frame = 3.0
 
-            else:
-                if self.tree.f_frame >= 8.0:
-                    self.played_once = True
-                    self.tree.frame = 7
-                else:
-                    self.tree.frame = int(self.tree.f_frame)
         else:
-            self.hold -= game_framework.frame_time
-            if self.hold <= 0:
-                self.tree.attack_cooldown = 4.0
-                self.tree.change_state(self.tree.IDLE, None)
+            self.tree.f_frame += 15.0 * game_framework.frame_time
+
+            if self.tree.f_frame >= 8.0:
+                self.tree.frame = 7
+                self.finish_timer -= game_framework.frame_time
+                if self.finish_timer <= 0:
+                    self.tree.change_state(self.tree.IDLE, None)
+            else:
+                self.tree.frame = int(self.tree.f_frame)
 
     def draw(self, cx, cy):
         sx = self.cell_w * self.tree.frame
@@ -258,7 +244,6 @@ class GreenTreeHit:
         if GreenTreeHit.image is None:
             GreenTreeHit.image = load_image('greentree_hit.png')
 
-        # [수정] 124 / 2 = 62
         self.cell_w = 62
         self.cell_h = 66
 
@@ -276,7 +261,6 @@ class GreenTreeHit:
         self.anim_duration = 0.2
         self.state_duration = 0.5
 
-        # 상태 변경 시 스프라이트 크기 정보 업데이트
         self.tree.sprite_w = self.cell_w
         self.tree.sprite_h = self.cell_h
 
@@ -330,7 +314,6 @@ class EnemyGreenTree:
         self.vy = 0.0
         self.on_ground = True
 
-        # 초기 상태는 IDLE이므로 IDLE 크기로 설정
         self.sprite_w = 60
         self.sprite_h = 66
 
@@ -376,17 +359,32 @@ class EnemyGreenTree:
                 self.x + self.half_hit_w,
                 self.y - self.half_hit_h + 5)
 
+    def check_wall_collision(self):
+        my_body = self.get_bb()
+        if not self.platforms: return
+        for p in self.platforms:
+            if not getattr(p, 'is_main', False): continue
+            b = p.get_bb()
+            if my_body[0] > b[2] or my_body[2] < b[0] or my_body[3] < b[1] or my_body[1] > b[3]: continue
+
+            if self.y < b[3] + self.half_hit_h - 5:
+                if self.x < p.x:
+                    self.x = b[0] - self.half_hit_w
+                elif self.x > p.x:
+                    self.x = b[2] + self.half_hit_w
+
     def check_ground(self):
         self.on_ground = False
         feet = self.get_bb_feet()
         for p in self.platforms:
-            if not isinstance(p, Ground):
-                continue
             b = p.get_bb()
             if feet[2] < b[0]: continue
             if feet[0] > b[2]: continue
             if feet[3] < b[1]: continue
             if feet[1] > b[3]: continue
+
+            if feet[1] < b[3] - 35: continue
+
             if self.vy <= 0:
                 self.on_ground = True
                 self.vy = 0
@@ -423,11 +421,12 @@ class EnemyGreenTree:
             self.vy -= GRAVITY_PPS * game_framework.frame_time
 
         self.y += self.vy * game_framework.frame_time
+
+        self.check_wall_collision()
         self.check_ground()
-        self.cur_state.do()
 
         if not self.on_ground:
-            hard_y = 60 + self.half_hit_h
+            hard_y = -100
             if self.y < hard_y:
                 self.y = hard_y
                 self.vy = 0
@@ -436,6 +435,8 @@ class EnemyGreenTree:
         if not self.alive:
             game_world.remove_object(self)
             return
+
+        self.cur_state.do()
 
     def draw(self, cx, cy):
         if not self.alive: return
@@ -448,7 +449,7 @@ class DeadGreenTree:
         self.x, self.y = x, y
         self.sprite_w = sprite_w
         self.sprite_h = sprite_h
-        self.scale = SCALE/1.2
+        self.scale = SCALE / 1.2
         self.timer = duration
 
     def update(self):
