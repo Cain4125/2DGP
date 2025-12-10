@@ -610,10 +610,14 @@ class Skull:
             platform_bb = p.get_bb()
             left_a, bottom_a, right_a, top_a = my_feet
             left_b, bottom_b, right_b, top_b = platform_bb
+
             if left_a > right_b: continue
             if right_a < left_b: continue
             if top_a < bottom_b: continue
             if bottom_a > top_b: continue
+
+            if bottom_a < top_b - 15:
+                continue
 
             if self.vy <= 0:
                 self.on_ground = True
@@ -627,6 +631,8 @@ class Skull:
             return
 
         for p in self.platforms:
+            if not getattr(p, 'is_main', False):
+                continue
             platform_bb = p.get_bb()
 
             if my_body[0] > platform_bb[2]: continue
@@ -691,6 +697,7 @@ class Skull:
         if cur not in (self.DASH,):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
         self.y += self.vy * game_framework.frame_time
+        self.check_wall_collision()
         if cur != self.DASH:
             self.check_ground()
         else:
