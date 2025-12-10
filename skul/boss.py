@@ -309,21 +309,31 @@ class BossDead:
         self.timer = 0.0
         self.exploded = False
         self.ending_timer = 4.0
+        self.minions_cleared = False
 
     def enter(self):
         self.timer = 1.5
         self.exploded = False
         self.ending_timer = 4.0
+        self.minions_cleared = False
 
     def exit(self):
         pass
 
     def do(self):
+        if not self.minions_cleared:
+            for o in game_world.all_objects():
+                name = type(o).__name__
+                if name.startswith('Enemy') and name != 'EnemyGiantTree':
+                    if hasattr(o, 'take_damage'):
+                        o.take_damage(99999, 0)
+
+            self.minions_cleared = True
+
         if not self.exploded:
             self.timer -= game_framework.frame_time
             if self.timer <= 0:
                 self.exploded = True
-                # [수정] 12개 -> 24개로 증가 (파편이 더 많이 튐)
                 for _ in range(24):
                     debris = BossDebris(self.boss.x, self.boss.y)
                     game_world.add_object(debris, 1)
