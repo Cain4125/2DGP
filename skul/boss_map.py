@@ -4,7 +4,12 @@ from ground import Ground
 import camera
 import game_framework
 from constants import SCALE
+import random
+
 from boss import EnemyGiantTree
+from enemy_knight import EnemyKnight
+from enemy_tree import EnemyTree
+from enemy_greentree import EnemyGreenTree
 
 WORLD_WIDTH_PIXELS = 1500
 WORLD_HEIGHT_PIXELS = 800
@@ -50,11 +55,29 @@ class BossStage:
         self.boss = EnemyGiantTree(750, 250, self.skull)
 
         self.bg = FixedBackground()
+        self.spawn_timer = 0.0
+
+    def spawn_wave(self):
+        for target_platform in [self.platform_L2, self.platform_R2]:
+            gt_x = target_platform.x
+            gt_y = target_platform.y + 60
+            green_tree = EnemyGreenTree(gt_x, gt_y, self.skull, self.platforms)
+            game_world.add_object(green_tree, 1)
+
+        k_x = random.randint(100, 1400)
+        knight = EnemyKnight(k_x, 100, self.skull, self.platforms)
+        game_world.add_object(knight, 1)
+
+        t_x = random.randint(100, 1400)
+        tree = EnemyTree(t_x, 90, self.skull, self.platforms)
+        game_world.add_object(tree, 1)
 
     def enter(self):
         game_world.clear()
         game_world.add_object(self.bg, 0)
+
         game_world.add_object(self.boss, 1)
+
         game_world.add_object(self.skull, 2)
 
         for p in self.platforms:
@@ -67,10 +90,18 @@ class BossStage:
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
 
+        self.spawn_wave()
+        self.spawn_timer = 0.0
+
     def exit(self):
         pass
 
     def update(self):
+        self.spawn_timer += game_framework.frame_time
+        if self.spawn_timer >= 20.0:
+            self.spawn_wave()
+            self.spawn_timer = 0.0
+
         return None
 
     def handle_events(self, event):
