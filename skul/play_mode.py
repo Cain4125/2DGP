@@ -31,7 +31,7 @@ def enter():
         'battle_stage3': BattleStage3(skull_player)
     }
 
-    current_stage = stages['boss_map']
+    current_stage = stages['start_map']
     current_stage.enter()
 
     ui = UI(skull_player)
