@@ -1,15 +1,18 @@
-from pico2d import load_image
+from pico2d import load_image, draw_rectangle, load_font
 import game_world
 from ground import Ground
+from spikepit import SpikePit
 import camera
 import game_framework
 from constants import SCALE
+import random
 
 from enemy_knight import EnemyKnight
+from enemy_greentree import EnemyGreenTree
 from enemy_tree import EnemyTree
 
-WORLD_WIDTH_PIXELS = 4000
-WORLD_HEIGHT_PIXELS = 1200
+WORLD_WIDTH_PIXELS = 2500
+WORLD_HEIGHT_PIXELS = 1300
 
 
 class FixedBackground:
@@ -72,42 +75,52 @@ class Portal:
         self.active = True
 
 
-class BattleStage:
+class BattleStage3:
     def __init__(self, skull):
         self.skull = skull
 
-        self.ground_left = Ground(700, 150, 1400, 300, is_main=True)
+        self.ground_left = Ground(400, 200, 800, 400, is_main=True)
+        self.ground_pit = Ground(1250, 125, 900, 250, is_main=True)
+        self.ground_right = Ground(2100, 200, 800, 400, is_main=True)
 
-        self.ground_pit = Ground(2000, 50, 1200, 100, is_main=True)
+        self.platforms = [self.ground_left, self.ground_pit, self.ground_right]
 
-        self.ground_right = Ground(3300, 150, 1400, 300, is_main=True)
-
-        self.spawn_platform = Ground(125, 650, 250, 40)
-
-        self.mid_platform = Ground(850, 450, 200, 40)
-
-        self.platforms = [
-            self.ground_left, self.ground_pit, self.ground_right,
-            self.spawn_platform, self.mid_platform
-        ]
+        self.platforms.append(Ground(1250, 900, 1000, 60))
+        self.platforms.append(Ground(600, 600, 250, 40))
+        self.platforms.append(Ground(1900, 600, 250, 40))
+        self.platforms.append(Ground(600, 750, 250, 40))
+        self.platforms.append(Ground(1900, 750, 250, 40))
 
         self.enemies = []
 
-        for i in range(10):
-            x = 400 + (i * 100)
-            y = 400
-            self.enemies.append(EnemyKnight(x, y, self.skull, self.platforms))
+        self.enemies.append(EnemyGreenTree(600, 800, self.skull, self.platforms))
+        self.enemies.append(EnemyGreenTree(1900, 800, self.skull, self.platforms))
 
-        for i in range(5):
-            x = 1600 + (i * 200)
-            y = 200
-            self.enemies.append(EnemyKnight(x, y, self.skull, self.platforms))
+        self.enemies.append(EnemyKnight(200, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyKnight(400, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyTree(600, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyTree(750, 600, self.skull, self.platforms))
 
-        self.enemies.append(EnemyTree(3300, 450, self.skull, self.platforms))
+        self.enemies.append(EnemyKnight(1800, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyKnight(2000, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyTree(2200, 600, self.skull, self.platforms))
+        self.enemies.append(EnemyTree(2400, 600, self.skull, self.platforms))
 
+        start_x = 850
+        gap = 130
+        spawn_y = 1100
 
-        portal_x = 3500
-        portal_y = 300 + (128 * SCALE) / 2
+        self.enemies.append(EnemyKnight(start_x, spawn_y, self.skull, self.platforms))
+        self.enemies.append(EnemyKnight(start_x + gap, spawn_y, self.skull, self.platforms))
+
+        self.enemies.append(EnemyGreenTree(start_x + gap * 2, spawn_y, self.skull, self.platforms))
+        self.enemies.append(EnemyGreenTree(start_x + gap * 3, spawn_y, self.skull, self.platforms))
+
+        self.enemies.append(EnemyTree(start_x + gap * 4, spawn_y, self.skull, self.platforms))
+        self.enemies.append(EnemyTree(start_x + gap * 5, spawn_y, self.skull, self.platforms))
+
+        portal_x = 1250
+        portal_y = 250 + (128 * SCALE) / 2
         self.portal = Portal(portal_x, portal_y)
 
         self.bg = FixedBackground()
@@ -131,7 +144,7 @@ class BattleStage:
 
         self.skull.platforms = self.platforms
 
-        self.skull.x, self.skull.y = 230, 750
+        self.skull.x, self.skull.y = 1250, 450
         self.skull.vy = 0
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
@@ -153,7 +166,7 @@ class BattleStage:
         is_up_pressed = self.skull.up_pressed
 
         if portal_proximity_x and is_up_pressed and self.portal.active:
-            return 'battle_stage2'
+            return 'boss_map'
 
         return None
 
