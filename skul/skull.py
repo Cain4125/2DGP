@@ -666,7 +666,7 @@ class Skull:
         if self.y < 100:
             self.y += 50
         cur = self.state_machine.cur_state
-        if cur not in (self.DASH, self.ATTACK1, self.ATTACK2):
+        if cur not in (self.DASH,):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
         self.y += self.vy * game_framework.frame_time
         if cur != self.DASH:
@@ -737,8 +737,6 @@ class Skull:
 
         lx, by, rx, ty = self.get_attack_bb()
         #draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
-
-
 
     def fire_ball(self):
         if self.skill_cooldown > 0:
