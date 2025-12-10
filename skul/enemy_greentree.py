@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle
+from pico2d import load_image, draw_rectangle, load_wav
 import game_framework
 from ground import Ground
 from constants import *
@@ -15,7 +15,6 @@ def collide(bb_a, bb_b):
     if top_a < bottom_b: return False
     if bottom_a > top_b: return False
     return True
-
 
 class GreenTreeIdle:
     image = None
@@ -158,11 +157,16 @@ class Spike:
 
 class GreenTreeAttack:
     image = None
+    sound = None
 
     def __init__(self, tree):
         self.tree = tree
         if GreenTreeAttack.image is None:
             GreenTreeAttack.image = load_image('greentree_attack.png')
+
+        if GreenTreeAttack.sound is None:
+            GreenTreeAttack.sound = load_wav('tree_attack.wav')
+            GreenTreeAttack.sound.set_volume(32)
 
         self.cell_w = 82
         self.cell_h = 68
@@ -211,6 +215,7 @@ class GreenTreeAttack:
             if self.wait_time <= 0:
                 self.wait_done = True
                 self.tree.f_frame = 3.0
+                GreenTreeAttack.sound.play()
 
         else:
             self.tree.f_frame += 15.0 * game_framework.frame_time
@@ -296,6 +301,7 @@ class GreenTreeHit:
 
 
 class EnemyGreenTree:
+    sound = None
     class DUMMY_JUMP:
         def enter(self, e): pass
 
@@ -339,6 +345,9 @@ class EnemyGreenTree:
 
         self.cur_state = self.IDLE
         self.cur_state.enter(None)
+        if EnemyGreenTree.sound is None:
+            EnemyGreenTree.sound = load_wav('enemy_dead2.wav')
+            EnemyGreenTree.sound.set_volume(80)
 
     def change_state(self, new, e):
         if self.cur_state == new and self.cur_state != self.HIT:
@@ -400,6 +409,7 @@ class EnemyGreenTree:
 
         if self.current_hp <= 0:
             self.alive = False
+            EnemyGreenTree.sound.play()
             if random.randint(1, 100) <= 10:
                 orb = HealOrb(self.x, self.y, self.target)
                 game_world.add_object(orb, 1)

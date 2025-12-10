@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle, load_font
+from pico2d import load_image, draw_rectangle, load_font, load_music
 import game_world
 from ground import Ground
 import camera
@@ -57,6 +57,9 @@ class BossStage:
         self.bg = FixedBackground()
         self.spawn_timer = 0.0
 
+        self.bgm = load_music('boss.mp3')
+        self.bgm.set_volume(64)
+
     def spawn_wave(self):
         for target_platform in [self.platform_L2, self.platform_R2]:
             gt_x = target_platform.x
@@ -65,11 +68,11 @@ class BossStage:
             game_world.add_object(green_tree, 1)
 
         k_x = random.randint(100, 1400)
-        knight = EnemyKnight(k_x, 200, self.skull, self.platforms)
+        knight = EnemyKnight(k_x, 300, self.skull, self.platforms)
         game_world.add_object(knight, 1)
 
         t_x = random.randint(100, 1400)
-        tree = EnemyTree(t_x, 200, self.skull, self.platforms)
+        tree = EnemyTree(t_x, 300, self.skull, self.platforms)
         game_world.add_object(tree, 1)
 
     def enter(self):
@@ -91,11 +94,13 @@ class BossStage:
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
 
+        self.bgm.repeat_play()
+
         self.spawn_wave()
         self.spawn_timer = 0.0
 
     def exit(self):
-        pass
+        self.bgm.stop()
 
     def update(self):
         self.spawn_timer += game_framework.frame_time

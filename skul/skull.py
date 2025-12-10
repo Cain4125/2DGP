@@ -1,6 +1,5 @@
-from pico2d import load_image, get_time, draw_rectangle, clamp
+from pico2d import load_image, get_time, draw_rectangle, clamp, load_wav
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_RIGHT, SDLK_LEFT, SDLK_DOWN, SDLK_a, SDLK_s, SDLK_z, SDLK_x
-
 
 import game_world
 import game_framework
@@ -12,6 +11,7 @@ import lobby_mode
 import play_mode
 import ending_mode
 
+
 def space_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
 
@@ -19,8 +19,10 @@ def space_down(e):
 def a_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
 
+
 def s_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_s
+
 
 def right_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
@@ -145,11 +147,15 @@ class Run:
 
 class Jump:
     image = None
+    sound = None
 
     def __init__(self, skull):
         self.skull = skull
         if Jump.image is None:
             Jump.image = load_image('skul_jump.png')
+        if Jump.sound is None:
+            Jump.sound = load_wav('jump.wav')
+            Jump.sound.set_volume(32)
         self.cell_w = Jump.image.w // 4
         self.cell_h = Jump.image.h
         self.timer = 0.0
@@ -162,6 +168,7 @@ class Jump:
             elif self.skull.jump_count < 2:
                 self.skull.vy = JUMP_VY_PPS
                 self.skull.jump_count += 1
+                Jump.sound.play()
         elif e[0] == 'FALL':
             self.skull.jump_count = 1
         self.timer = 0.0
@@ -195,11 +202,15 @@ class Jump:
 
 class Dash:
     image = None
+    sound = None
 
     def __init__(self, skull):
         self.skull = skull
         if Dash.image is None:
             Dash.image = load_image('skul_dash.png')
+        if Dash.sound is None:
+            Dash.sound = load_wav('dash.wav')
+            Dash.sound.set_volume(50)
         self.cell_w = Dash.image.w
         self.cell_h = Dash.image.h
         self.timer = 0.0
@@ -212,6 +223,7 @@ class Dash:
         self.skull.vy = 0
         self.skull.last_dash_time = get_time()
         self.skull.invincible_timer = DASH_DURATION_SEC
+        Dash.sound.play()
 
     def exit(self, e):
         pass
@@ -245,11 +257,15 @@ class Dash:
 
 class Attack1:
     image = None
+    sound = None
 
     def __init__(self, skull):
         self.skull = skull
         if Attack1.image is None:
             Attack1.image = load_image('skul_attack.png')
+        if Attack1.sound is None:
+            Attack1.sound = load_wav('attack1.wav')
+            Attack1.sound.set_volume(40)
         self.cell_w = 100
         self.cell_h = 100
         self.buffered_x = False
@@ -264,6 +280,7 @@ class Attack1:
         if not self.skull.on_ground:
             self.skull.vy = 0
         self.hit_enemies.clear()
+        Attack1.sound.play()
 
     def exit(self, e):
         pass
@@ -311,9 +328,14 @@ class Attack1:
 
 
 class Attack2:
+    sound = None
+
     def __init__(self, skull):
         self.skull = skull
         self.image = Attack1.image
+        if Attack2.sound is None:
+            Attack2.sound = load_wav('attack2.wav')
+            Attack2.sound.set_volume(40)
         self.cell_w = 100
         self.cell_h = 100
         self.buffered_x = False
@@ -328,6 +350,7 @@ class Attack2:
         if not self.skull.on_ground:
             self.skull.vy = 0
         self.hit_enemies.clear()
+        Attack2.sound.play()
 
     def exit(self, e):
         pass
@@ -439,12 +462,20 @@ class JumpAttack:
 
 class SkillSpin:
     image = None
+    sound_1 = None
+    sound_2 = None
 
     def __init__(self, skull):
         self.skull = skull
         if SkillSpin.image is None:
             SpinImage = load_image('skul_spin.png')
             SkillSpin.image = SpinImage
+        if SkillSpin.sound_1 is None:
+            SkillSpin.sound_1 = load_wav('attack1.wav')
+            SkillSpin.sound_1.set_volume(40)
+        if SkillSpin.sound_2 is None:
+            SkillSpin.sound_2 = load_wav('attack2.wav')
+            SkillSpin.sound_2.set_volume(40)
 
         self.frame_w = 66
         self.frame_h = 54
@@ -459,11 +490,13 @@ class SkillSpin:
         self.hit_interval = 0.3
         self.hit_timer = 0.0
         self.hit_enemies = []
+        self.hit_count = 0
 
     def enter(self, e):
         self.timer = 1.7
-        self.hit_timer = 0.0
+        self.hit_timer = self.hit_interval
         self.hit_enemies.clear()
+        self.hit_count = 0
 
         self.skull.skill_s_cooldown = 9.0
 
@@ -496,15 +529,23 @@ class SkillSpin:
             self.hit_timer = 0.0
             self.hit_enemies.clear()
 
+            attack_bb = self.get_attack_bb()
 
-        attack_bb = self.get_attack_bb()
-        for o in game_world.all_objects():
-            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree', 'EnemyGiantTree'):
-                if id(o) in self.hit_enemies: continue
+            # 소리 틱 발생 (타격 유무 무관)
+            self.hit_count += 1
+            if self.hit_count % 2 == 1:
+                SkillSpin.sound_1.play()
+            else:
+                SkillSpin.sound_2.play()
 
-                if collide(attack_bb, o.get_bb()):
-                    o.take_damage(5, self.skull.face_dir)
-                    self.hit_enemies.append(id(o))
+            # 타격 판정 실행
+            for o in game_world.all_objects():
+                if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree', 'EnemyGiantTree'):
+                    if id(o) in self.hit_enemies: continue
+
+                    if collide(attack_bb, o.get_bb()):
+                        o.take_damage(5, self.skull.face_dir)
+                        self.hit_enemies.append(id(o))
 
     def draw(self, cx, cy):
         sx = self.frame_w * self.skull.frame
@@ -526,6 +567,7 @@ class SkillSpin:
 
     def handle_event(self, e):
         return False
+
 
 class Skull:
     def __init__(self, platforms, world_w=1400):
@@ -582,7 +624,8 @@ class Skull:
                 self.RUN: {z_down_with_cooldown: self.DASH, space_down: self.JUMP, x_down: self.ATTACK1,
                            right_down: self.RUN, left_down: self.RUN, right_up: self.RUN, left_up: self.RUN,
                            a_down: self.RUN, s_down_ready: self.SKILL_SPIN},
-                self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK, a_down: self.JUMP},
+                self.JUMP: {space_down: self.JUMP, z_down_with_cooldown: self.DASH, x_down: self.JUMP_ATTACK,
+                            a_down: self.JUMP},
                 self.DASH: {space_down: self.JUMP},
                 self.ATTACK1: {z_down_with_cooldown: self.DASH, space_down: self.JUMP},
                 self.ATTACK2: {z_down_with_cooldown: self.DASH, space_down: self.JUMP},
@@ -656,7 +699,8 @@ class Skull:
         for o in game_world.all_objects():
             if o == self:
                 continue
-            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree', 'EnemyGiantTree') and id(o) not in hit_enemies:
+            if type(o).__name__ in ('EnemyKnight', 'EnemyTree', 'EnemyGreenTree', 'EnemyGiantTree') and id(
+                    o) not in hit_enemies:
                 if collide(attack_bb, o.get_bb()):
                     o.take_damage(SKULL_ATTACK_DAMAGE, self.face_dir)
                     hit_enemies.append(id(o))
@@ -674,13 +718,9 @@ class Skull:
 
         self.invincible_timer = 1.5
 
-
-
-
         self.invincible_timer = 1.5
 
     def update(self):
-        # 쿨타임
         if self.skill_cooldown > 0:
             self.skill_cooldown -= game_framework.frame_time
             if self.skill_cooldown < 0:
@@ -689,7 +729,6 @@ class Skull:
             self.skill_s_cooldown -= game_framework.frame_time
             if self.skill_s_cooldown < 0:
                 self.skill_s_cooldown = 0
-        # 무적
         if self.invincible_timer > 0.0:
             self.invincible_timer -= game_framework.frame_time
         if self.y < 100:
@@ -705,7 +744,6 @@ class Skull:
             self.on_ground = False
         self.state_machine.update()
 
-        # 맵 밖으로 나가지 않게 고정
         self.x = clamp(0 + self.half_w, self.x, self.world_w - self.half_w)
 
         cur_after_do = self.state_machine.cur_state
@@ -766,8 +804,7 @@ class Skull:
             self.state_machine.draw(camera_x, camera_y)
 
         lx, by, rx, ty = self.get_attack_bb()
-        #draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
-
+        # draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
     def fire_ball(self):
         if self.skill_cooldown > 0:
@@ -788,4 +825,4 @@ class Skull:
         current_w, current_H = 50, 30
         half_w = (current_w * SCALE) / 2
         half_h = (current_H * SCALE) / 2
-        return self.x - half_w, self.y - half_h- 30, self.x + half_w, self.y + half_h
+        return self.x - half_w, self.y - half_h - 30, self.x + half_w, self.y + half_h

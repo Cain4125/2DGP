@@ -1,4 +1,4 @@
-from pico2d import load_image
+from pico2d import load_image, load_music, load_wav
 import game_world
 from ground import Ground
 import camera
@@ -77,13 +77,10 @@ class BattleStage:
         self.skull = skull
 
         self.ground_left = Ground(700, 150, 1400, 300, is_main=True)
-
         self.ground_pit = Ground(2000, 50, 1200, 100, is_main=True)
-
         self.ground_right = Ground(3300, 150, 1400, 300, is_main=True)
 
         self.spawn_platform = Ground(125, 650, 250, 40)
-
         self.mid_platform = Ground(850, 450, 200, 40)
 
         self.platforms = [
@@ -95,22 +92,27 @@ class BattleStage:
 
         for i in range(10):
             x = 400 + (i * 100)
-            y = 400
+            y = 500
             self.enemies.append(EnemyKnight(x, y, self.skull, self.platforms))
 
         for i in range(5):
             x = 1600 + (i * 200)
-            y = 200
+            y = 300
             self.enemies.append(EnemyKnight(x, y, self.skull, self.platforms))
 
-        self.enemies.append(EnemyTree(3300, 450, self.skull, self.platforms))
-
+        self.enemies.append(EnemyTree(3300, 550, self.skull, self.platforms))
 
         portal_x = 3500
         portal_y = 300 + (128 * SCALE) / 2
         self.portal = Portal(portal_x, portal_y)
 
         self.bg = FixedBackground()
+
+        self.bgm = load_music('playmode.mp3')
+        self.bgm.set_volume(64)
+
+        self.portal_sound = load_wav('door_open.wav')
+        self.portal_sound.set_volume(32)
 
     def enter(self):
         game_world.clear()
@@ -136,8 +138,10 @@ class BattleStage:
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
 
+        self.bgm.repeat_play()
+
     def exit(self):
-        pass
+        self.bgm.stop()
 
     def update(self):
         all_enemies_dead = True
@@ -153,6 +157,7 @@ class BattleStage:
         is_up_pressed = self.skull.up_pressed
 
         if portal_proximity_x and is_up_pressed and self.portal.active:
+            self.portal_sound.play()
             return 'battle_stage2'
 
         return None

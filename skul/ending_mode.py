@@ -1,4 +1,4 @@
-from pico2d import load_image, get_events, clear_canvas, update_canvas, load_font
+from pico2d import load_image, get_events, clear_canvas, update_canvas, load_font, load_music
 from sdl2 import SDL_QUIT, SDL_KEYDOWN, SDLK_ESCAPE, SDL_MOUSEBUTTONDOWN
 import game_framework
 import play_mode
@@ -8,6 +8,7 @@ class EndingMode:
     image = None
     font_title = None
     font_button = None
+    bgm = None
 
     def __init__(self, result):
         self.result = result
@@ -29,17 +30,27 @@ class EndingMode:
         self.btn_restart_rect = (center_x - 200, base_y - 30, center_x - 50, base_y + 30)
         self.btn_exit_rect = (center_x + 50, base_y - 30, center_x + 200, base_y + 30)
 
+        bgm_file = 'ending_clear.wav' if self.result == 'CLEAR' else 'ending_fail.wav'
+
+        if EndingMode.bgm is None or EndingMode.bgm.file != bgm_file:
+            try:
+                EndingMode.bgm = load_music(bgm_file)
+                EndingMode.bgm.set_volume(64)
+            except:
+                EndingMode.bgm = None
+
     def enter(self):
-        pass
+        if EndingMode.bgm:
+            EndingMode.bgm.play()
 
     def finish(self):
-        pass
+        if EndingMode.bgm:
+            EndingMode.bgm.stop()
 
     def update(self):
         pass
 
     def draw(self):
-
         self.image.draw(self.canvas_w // 2, self.canvas_h // 2, 1000, 700)
 
         text = "CLEAR!" if self.result == 'CLEAR' else "FAIL"

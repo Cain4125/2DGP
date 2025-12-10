@@ -3,12 +3,16 @@ import game_framework
 import play_mode
 
 def enter():
-    global image
+    global image, bgm
     image = load_image('Title.png')
+    bgm = load_music('lobby.wav')
+    bgm.set_volume(64)
+    bgm.play(1)
 
 def finish():
-    global image
+    global image, bgm
     del image
+    del bgm
 
 def handle_events():
     events = get_events()

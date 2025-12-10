@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle, clamp, get_time
+from pico2d import load_image, draw_rectangle, clamp, get_time, load_wav
 import game_world
 import game_framework
 from constants import SCALE, GRAVITY_PPS
@@ -18,6 +18,10 @@ def collide(bb_a, bb_b):
     if top_a < bottom_b: return False
     if bottom_a > top_b: return False
     return True
+
+
+# 파일 최상단의 불안정한 로딩 코드를 제거합니다.
+# STOMP_SOUND, RANGE_SOUND, DEADBOSS_SOUND 정의는 아래 클래스 내부로 이동합니다.
 
 
 class BossDebris:
@@ -170,7 +174,13 @@ class BossIdle:
 
 
 class BossMelee:
+    STOMP_SOUND = None
+
     def __init__(self, boss):
+        if BossMelee.STOMP_SOUND is None:
+            BossMelee.STOMP_SOUND = load_wav('stomp.wav')
+            BossMelee.STOMP_SOUND.set_volume(100)
+
         self.boss = boss
         self.image = load_image('boss_melee.png')
         self.w, self.h = 140, 112
@@ -213,6 +223,9 @@ class BossMelee:
                 game_world.add_object(BossStamp(left_x, ground_y, self.boss.target), 1)
                 game_world.add_object(BossStamp(right_x, ground_y, self.boss.target), 1)
 
+                if BossMelee.STOMP_SOUND:
+                    BossMelee.STOMP_SOUND.play()
+
         elif self.phase == 2:
             self.boss.f_frame += 10 * game_framework.frame_time
             if self.boss.f_frame >= 7.0:
@@ -236,7 +249,13 @@ class BossMelee:
 
 
 class BossRange:
+    RANGE_SOUND = None
+
     def __init__(self, boss):
+        if BossRange.RANGE_SOUND is None:
+            BossRange.RANGE_SOUND = load_wav('range.wav')
+            BossRange.RANGE_SOUND.set_volume(35)
+
         self.boss = boss
         self.image = load_image('boss_range.png')
         self.w, self.h = 134, 115
@@ -270,6 +289,9 @@ class BossRange:
                 self.phase = 2
                 self.boss.f_frame = 2.0
 
+                if BossRange.RANGE_SOUND:
+                    BossRange.RANGE_SOUND.play()
+
                 center_y = self.boss.y - (10 * SCALE)
                 for i in range(8):
                     angle = math.radians(i * 45)
@@ -299,7 +321,13 @@ class BossRange:
 
 
 class BossDead:
+    DEADBOSS_SOUND = None
+
     def __init__(self, boss):
+        if BossDead.DEADBOSS_SOUND is None:
+            BossDead.DEADBOSS_SOUND = load_wav('deadboss.wav')
+            BossDead.DEADBOSS_SOUND.set_volume(80)
+
         self.boss = boss
         self.image_dead = load_image('boss_dead.png')
         self.image_dying = load_image('boss_range.png')
@@ -334,6 +362,10 @@ class BossDead:
             self.timer -= game_framework.frame_time
             if self.timer <= 0:
                 self.exploded = True
+
+                if BossDead.DEADBOSS_SOUND:
+                    BossDead.DEADBOSS_SOUND.play()
+
                 for _ in range(24):
                     debris = BossDebris(self.boss.x, self.boss.y)
                     game_world.add_object(debris, 1)

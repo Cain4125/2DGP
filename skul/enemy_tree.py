@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle
+from pico2d import load_image, draw_rectangle, load_wav
 import game_framework
 from ground import Ground
 from constants import *
@@ -100,9 +100,6 @@ class TreeRun:
         dist_x = self.tree.target.x - self.tree.x
         dist_y = abs(self.tree.target.y - self.tree.y)
 
-        # [수정] 벽 충돌로 이동이 불가능한지 체크할 수도 있으나,
-        # 여기서는 단순히 타겟을 향해 이동만 시도하고, 실제 이동 제한은 update()의 check_wall_collision에서 처리
-
         if abs(dist_x) < ATTACK_RANGE:
             if self.tree.attack_cooldown <= 0:
                 self.tree.change_state(self.tree.ATTACK, None)
@@ -134,11 +131,17 @@ class TreeRun:
 
 class TreeAttack:
     image = None
+    sound = None
 
     def __init__(self, tree):
         self.tree = tree
         if TreeAttack.image is None:
             TreeAttack.image = load_image('tree_attack.png')
+
+        if TreeAttack.sound is None:
+            TreeAttack.sound = load_wav('tree_attack.wav')
+            TreeAttack.sound.set_volume(32)
+
         self.cell_w = 50
         self.cell_h = 100
         self.played_once = False
@@ -167,6 +170,7 @@ class TreeAttack:
             self.tree.frame = 0
             if self.wait_time <= 0:
                 self.wait_done = True
+                TreeAttack.sound.play()
             return
 
         if not self.played_once:
@@ -285,6 +289,7 @@ class TreeHit:
 
 
 class EnemyTree:
+    sound = None
     class DUMMY_JUMP:
         def enter(self, e): pass
 
@@ -329,6 +334,9 @@ class EnemyTree:
 
         self.cur_state = self.IDLE
         self.cur_state.enter(None)
+        if EnemyTree.sound is None:
+            EnemyTree.sound = load_wav('enemy_dead2.wav')
+            EnemyTree.sound.set_volume(80)
 
     def set_sprite_size(self, w, h):
         self.sprite_w = w
@@ -345,14 +353,12 @@ class EnemyTree:
         self.cur_state = new
         self.cur_state.enter(e)
 
-    # [수정] 몸통 박스 (벽 충돌용)
     def get_bb(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
                 self.x + self.half_hit_w,
                 self.y + self.half_hit_h)
 
-    # [수정] 발 박스 (착지용)
     def get_bb_feet(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
@@ -395,7 +401,6 @@ class EnemyTree:
             if feet[3] < b[1]: continue
             if feet[1] > b[3]: continue
 
-            # [수정] 벽타기 방지
             if feet[1] < b[3] - 15: continue
 
             if self.vy <= 0:
@@ -404,14 +409,12 @@ class EnemyTree:
                 self.y = b[3] + self.half_hit_h
                 return
 
-    # [추가] 벽 충돌 체크
     def check_wall_collision(self):
         my_body = self.get_bb()
         if not self.platforms:
             return
 
         for p in self.platforms:
-            # 메인 바닥만 벽으로 취급
             if not getattr(p, 'is_main', False):
                 continue
 
@@ -422,7 +425,6 @@ class EnemyTree:
             if my_body[3] < b[1]: continue
             if my_body[1] > b[3]: continue
 
-            # 내 발이 발판 윗면보다 아래에 있다면 (벽 충돌)
             if self.y < b[3] + self.half_hit_h - 5:
                 if self.x < p.x:
                     self.x = b[0] - self.half_hit_w
@@ -438,6 +440,7 @@ class EnemyTree:
 
         if self.current_hp <= 0:
             self.alive = False
+            EnemyTree.sound.play()
             if random.randint(1, 100) <= 10:
                 orb = HealOrb(self.x, self.y, self.target)
                 game_world.add_object(orb, 1)
@@ -463,13 +466,12 @@ class EnemyTree:
             self.vy -= GRAVITY_PPS * game_framework.frame_time
         self.y += self.vy * game_framework.frame_time
 
-        # [수정] 충돌 체크 순서 및 로직 추가
         self.check_wall_collision()
         self.check_ground()
 
         self.cur_state.do()
         if not self.on_ground:
-            hard_y = -100  # 안전장치
+            hard_y = -100
             if self.y < hard_y:
                 self.y = hard_y
                 self.vy = 0

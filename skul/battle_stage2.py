@@ -1,4 +1,4 @@
-from pico2d import load_image
+from pico2d import load_image, load_music, load_wav
 import game_world
 from ground import Ground
 from spikepit import SpikePit
@@ -120,6 +120,12 @@ class BattleStage2:
 
         self.bg = FixedBackground()
 
+        self.bgm = load_music('playmode.mp3')
+        self.bgm.set_volume(64)
+
+        self.portal_sound = load_wav('door_open.wav')
+        self.portal_sound.set_volume(32)
+
     def enter(self):
         game_world.clear()
 
@@ -147,8 +153,10 @@ class BattleStage2:
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
 
+        self.bgm.repeat_play()
+
     def exit(self):
-        pass
+        self.bgm.stop()
 
     def update(self):
         all_enemies_dead = True
@@ -164,6 +172,7 @@ class BattleStage2:
         is_up_pressed = self.skull.up_pressed
 
         if portal_proximity_x and is_up_pressed and self.portal.active:
+            self.portal_sound.play()
             return 'battle_stage3'
 
         return None

@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle
+from pico2d import load_image, draw_rectangle, load_wav
 import game_framework
 from ground import Ground
 from constants import *
@@ -15,6 +15,7 @@ def collide(bb_a, bb_b):
     if top_a < bottom_b: return False
     if bottom_a > top_b: return False
     return True
+
 
 
 class Idle:
@@ -97,9 +98,6 @@ class Run:
             return
         dist_x = self.knight.target.x - self.knight.x
 
-        # [수정] 벽에 막혀서 못 가는 경우 멍청하게 비비지 않도록 처리할 수도 있지만
-        # 일단은 벽 충돌 로직이 밀어내게 둠
-
         if abs(dist_x) < ATTACK_RANGE:
             if self.knight.attack_cooldown <= 0:
                 self.knight.change_state(self.knight.ATTACK, None)
@@ -131,11 +129,17 @@ class Run:
 
 class Attack:
     image = None
+    sound = None
 
     def __init__(self, knight):
         self.knight = knight
         if Attack.image is None:
             Attack.image = load_image('knight_attack.png')
+
+        if Attack.sound is None:
+            Attack.sound = load_wav('knight_attack.wav')
+            Attack.sound.set_volume(32)
+
         self.cell_w = 100
         self.cell_h = 100
         self.played_once = False
@@ -164,6 +168,7 @@ class Attack:
             self.knight.frame = 0
             if self.wait_time <= 0:
                 self.wait_done = True
+                Attack.sound.play()
             return
 
         if not self.played_once:
@@ -282,6 +287,8 @@ class Hit:
 
 
 class EnemyKnight:
+    DEATH_SOUND = None
+
     class DUMMY_JUMP:
         def enter(self, e): pass
 
@@ -292,6 +299,10 @@ class EnemyKnight:
         def draw(self, cx, cy): pass
 
     def __init__(self, x, y, target, platforms):
+        if EnemyKnight.DEATH_SOUND is None:
+            EnemyKnight.DEATH_SOUND = load_wav('enemy_dead.wav')
+            EnemyKnight.DEATH_SOUND.set_volume(80)
+
         self.x, self.y = x, y
         self.f_frame = 0.0
         self.frame = 0
@@ -332,24 +343,19 @@ class EnemyKnight:
         self.sprite_h = h
 
     def change_state(self, new, e):
-        if self.cur_state == new:
-            if self.cur_state == self.HIT:
-                pass
-            else:
-                return
+        if self.cur_state == new and self.cur_state != self.HIT:
+            return
 
         self.cur_state.exit()
         self.cur_state = new
         self.cur_state.enter(e)
 
-    # 몸통 박스 (벽 충돌용)
     def get_bb(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
                 self.x + self.half_hit_w,
                 self.y + self.half_hit_h)
 
-    # 발 박스 (착지용)
     def get_bb_feet(self):
         return (self.x - self.half_hit_w,
                 self.y - self.half_hit_h,
@@ -385,31 +391,29 @@ class EnemyKnight:
     def check_ground(self):
         self.on_ground = False
         feet = self.get_bb_feet()
-        for p in self.platforms:
-            b = p.get_bb()
-            if feet[2] < b[0]: continue
-            if feet[0] > b[2]: continue
-            if feet[3] < b[1]: continue
-            if feet[1] > b[3]: continue
 
-            # [수정] 벽타기 방지 (발이 발판 윗면보다 너무 아래면 착지 아님)
-            if feet[1] < b[3] - 15:
-                continue
+        if self.vy <= 0:
+            for p in self.platforms:
+                b = p.get_bb()
+                if feet[2] < b[0]: continue
+                if feet[0] > b[2]: continue
+                if feet[3] < b[1]: continue
+                if feet[1] > b[3]: continue
 
-            if self.vy <= 0:
+                if feet[1] < b[3] - 15:
+                    continue
+
                 self.on_ground = True
                 self.vy = 0
                 self.y = b[3] + self.half_hit_h
                 return
 
-    # [추가] 벽 충돌 체크 로직 (스컬과 동일 원리)
     def check_wall_collision(self):
         my_body = self.get_bb()
         if not self.platforms:
             return
 
         for p in self.platforms:
-            # 메인 바닥이 아니면(공중 발판이면) 벽 충돌 체크 안 함
             if not getattr(p, 'is_main', False):
                 continue
 
@@ -420,12 +424,9 @@ class EnemyKnight:
             if my_body[3] < b[1]: continue
             if my_body[1] > b[3]: continue
 
-            # 벽에 부딪힘 (내 발이 발판 윗면보다 아래에 있음)
             if self.y < b[3] + self.half_hit_h - 5:
-                # 왼쪽으로 가다가 부딪힘
                 if self.x < p.x:
                     self.x = b[0] - self.half_hit_w
-                # 오른쪽으로 가다가 부딪힘
                 elif self.x > p.x:
                     self.x = b[2] + self.half_hit_w
 
@@ -437,6 +438,7 @@ class EnemyKnight:
         print(f"KNIGHT HIT! HP: {self.current_hp}")
 
         if self.current_hp <= 0:
+            EnemyKnight.DEATH_SOUND.play()
             self.alive = False
             if random.randint(1, 100) <= 10:
                 orb = HealOrb(self.x, self.y, self.target)
@@ -454,24 +456,25 @@ class EnemyKnight:
             )
             game_world.add_object(dead_knight_body, 0)
 
+
         if self.alive:
             self.change_state(self.HIT, attacker_face_dir)
 
     def update(self):
         self.attack_cooldown -= game_framework.frame_time
-        if self.cur_state not in (self.ATTACK, self.HIT):
+
+        if self.cur_state not in (self.ATTACK,):
             self.vy -= GRAVITY_PPS * game_framework.frame_time
+
         self.y += self.vy * game_framework.frame_time
 
-        # [수정] 이동 후 벽 충돌 체크 -> 그 다음 바닥 체크
         self.check_wall_collision()
         self.check_ground()
 
         self.cur_state.do()
 
         if not self.on_ground:
-            # 맵 바닥으로 떨어지지 않게 최소 높이 보정 (안전장치)
-            hard_y = -100  # 좀 더 여유롭게 둠
+            hard_y = -100
             if self.y < hard_y:
                 self.y = hard_y
                 self.vy = 0
@@ -496,6 +499,7 @@ class EnemyKnight:
 class DeadEnemy:
 
     def __init__(self, x, y, image_name, sprite_w, sprite_h, duration=3.0):
+
         self.image = load_image(image_name)
         self.x, self.y = x, y
         self.sprite_w = sprite_w

@@ -1,4 +1,4 @@
-from pico2d import load_image, draw_rectangle, load_font
+from pico2d import load_image, draw_rectangle, load_font, load_music, load_wav
 import game_world
 from ground import Ground
 import camera
@@ -12,7 +12,7 @@ from spikepit import SpikePit
 WORLD_WIDTH_PIXELS = 3000
 WORLD_HEIGHT_PIXELS = 800
 
-# 텍스트
+
 class TutorialText:
     def __init__(self, x, y, text, size=20, color=(255, 255, 255)):
         self.x = x
@@ -20,7 +20,7 @@ class TutorialText:
         self.text = text
         self.color = color
         try:
-                self.font = load_font('Cafe24PROUP.ttf', size)
+            self.font = load_font('Cafe24PROUP.ttf', size)
         except:
             print("폰트 파일을 찾을 수 없습니다.")
 
@@ -41,12 +41,12 @@ class TutorialText:
     def get_bb(self):
         return 0, 0, 0, 0
 
-# 배경장식
+
 class Decoration:
     def __init__(self, x, file_name, ground_y=60):
         self.image = load_image(file_name)
         self.x = x
-        self.scale = SCALE/1.5
+        self.scale = SCALE / 1.5
 
         self.w = self.image.w * self.scale
         self.h = self.image.h * self.scale
@@ -63,6 +63,7 @@ class Decoration:
 
     def get_bb(self):
         return 0, 0, 0, 0
+
 
 class FixedBackground:
     def __init__(self):
@@ -126,7 +127,6 @@ class Portal:
         self.active = True
 
 
-
 class StartMap:
     def __init__(self, skull):
         self.skull = skull
@@ -137,13 +137,9 @@ class StartMap:
         self.platform3 = Ground(1600, 350, 300, 40)
         self.platforms = [self.ground, self.platform1, self.platform2, self.platform3]
 
-        self.knights = [EnemyKnight(1600, 200, self.skull, self.platforms)
-                        ]
-        self.tree = [EnemyGreenTree(1600, 100, self.skull, self.platforms),]
-        self.enemies = self.knights + self.tree
+        self.knights = [EnemyKnight(1600, 250, self.skull, self.platforms)]
         self.trees = [
             Decoration(200, 'Tree02.png'),
-            #Decoration(900, 'Tree01.png'),
             Decoration(1800, 'Tree03.png'),
             Decoration(2600, 'Tree04.png')
         ]
@@ -154,15 +150,10 @@ class StartMap:
 
         self.tutorial_texts = [
             TutorialText(550, 220, "SPACE (Jump)", size=25, color=(255, 255, 255)),
-
             TutorialText(850, 450, "SPACE x 2 (Double Jump)", size=25, color=(255, 255, 255)),
-
             TutorialText(1300, 500, "SPACE + Z (Dash)", size=25, color=(255, 255, 255)),
-
             TutorialText(1200, 200, "Attack: X / Skill: A,S", size=25, color=(255, 50, 50)),
-
-            TutorialText(2700,250,"Up arrow key", size = 25, color=(255, 255, 255)),
-
+            TutorialText(2700, 250, "Up arrow key", size=25, color=(255, 255, 255)),
             TutorialText(1550, 420, "Down arrow key + SPACE (Drop Down)", size=25, color=(255, 255, 255))
         ]
 
@@ -172,6 +163,12 @@ class StartMap:
         self.portal = Portal(portal_x, portal_y)
 
         self.bg = FixedBackground()
+
+        self.bgm = load_music('playmode.mp3')
+        self.bgm.set_volume(64)
+
+        self.portal_sound = load_wav('door_open.wav')
+        self.portal_sound.set_volume(32)
 
     def enter(self):
         game_world.clear()
@@ -202,8 +199,10 @@ class StartMap:
 
         camera.camera.set_target_and_world(self.skull, WORLD_WIDTH_PIXELS, WORLD_HEIGHT_PIXELS)
 
+        self.bgm.repeat_play()
+
     def exit(self):
-        pass
+        self.bgm.stop()
 
     def update(self):
         all_enemies_dead = True
@@ -219,6 +218,7 @@ class StartMap:
         is_up_pressed = self.skull.up_pressed
 
         if portal_proximity_x and is_up_pressed and self.portal.active:
+            self.portal_sound.play()
             return 'battle_stage'
 
         return None
