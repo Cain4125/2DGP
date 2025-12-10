@@ -156,7 +156,7 @@ class StartMap:
 
             TutorialText(1300, 500, "SPACE + Z (Dash)", size=25, color=(255, 255, 255)),
 
-            TutorialText(1200, 200, "Attack: X / Skill: A/S", size=25, color=(255, 50, 50)),
+            TutorialText(1200, 200, "Attack: X / Skill: A,S", size=25, color=(255, 50, 50)),
 
             TutorialText(2700,250,"Up arrow key", size = 25, color=(255, 255, 255)),
 

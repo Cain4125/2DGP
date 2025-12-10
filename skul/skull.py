@@ -738,43 +738,7 @@ class Skull:
         lx, by, rx, ty = self.get_attack_bb()
         #draw_rectangle(lx - camera_x, by - camera_y, rx - camera_x, ty - camera_y)
 
-        BAR_WIDTH = 50 * SCALE
-        BAR_HEIGHT = 5 * SCALE
-        BAR_OFFSET_Y = self.half_h + (10 * SCALE)
 
-        center_x = self.x - camera_x
-        center_y = self.y - camera_y + BAR_OFFSET_Y
-
-        health_ratio = self.current_hp / self.max_hp
-
-
-        bar_left = center_x - (BAR_WIDTH / 2)
-        bar_right_max = center_x + (BAR_WIDTH / 2)
-        bar_top = center_y + (BAR_HEIGHT / 2)
-        bar_bottom = center_y - (BAR_HEIGHT / 2)
-
-
-        draw_rectangle(bar_left, bar_bottom, bar_right_max, bar_top)
-
-
-        src_w_full = self.hp_bar_image.w
-        src_h_full = self.hp_bar_image.h
-
-        src_w_clip = int(src_w_full * health_ratio)
-
-        dest_w = int(BAR_WIDTH * health_ratio)
-
-
-        lost_width = BAR_WIDTH - dest_w
-        draw_x_adjusted = center_x - (lost_width / 2)
-
-        if dest_w > 0:
-            self.hp_bar_image.clip_draw(
-                0, 0,
-                src_w_clip, src_h_full,
-                draw_x_adjusted, center_y,
-                dest_w, BAR_HEIGHT
-            )
 
     def fire_ball(self):
         if self.skill_cooldown > 0:
