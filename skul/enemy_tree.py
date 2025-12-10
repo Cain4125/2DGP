@@ -4,6 +4,8 @@ from ground import Ground
 from constants import *
 import game_world
 from skull import Skull
+import random
+from healorb import HealOrb
 
 
 def collide(bb_a, bb_b):
@@ -404,6 +406,9 @@ class EnemyTree:
 
         if self.current_hp <= 0:
             self.alive = False
+            if random.randint(1, 100) <= 50:
+                orb = HealOrb(self.x, self.y, self.target)
+                game_world.add_object(orb, 1)
 
             y_offset_to_sink = (self.hit_h * SCALE / 2) - (33 * SCALE / 2)
 
